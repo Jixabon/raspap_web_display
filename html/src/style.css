@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+
+	--font-encode: "Encode Sans", serif;
+
+	--color-dark-blue: #1e2129;
+	--color-teal: #2b8080;
+}
+
+html {
+	width: 100vw;
+	height: 100vh;
+}
+
+body {
+	width: 100%;
+}
+
+main {
+	@apply mx-6 flex-grow;
+}
