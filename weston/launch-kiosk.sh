@@ -1,3 +1,3 @@
 #!/bin/bash
 
-firefox --kiosk https://example.com
+firefox --kiosk http://localhost:8085
