@@ -9,6 +9,7 @@ export function cleanOutput(string) {
     return string;
 }
 
+// System
 export async function getRaspAPVersion() {
     const {stdout, stderr} = await exec("grep 'RASPI_VERSION' /var/www/html/includes/defaults.php | awk -F\"'\" '{print $4}'");
     
@@ -20,6 +21,18 @@ export async function getRaspAPVersion() {
     return cleanOutput(stdout);
 }
 
+export async function getUsedDisk() {
+    const {stdout, stderr} = await exec("df -h / | awk 'NR==2 {print $5}'");
+    
+    if (stderr) {
+        console.error(stderr);
+        return;
+    }
+
+    return Number.parseInt(stdout.trim().replace('%', ''));
+}
+
+// AP
 export async function getAPInterface() {
     const {stdout, stderr} = await exec("cat /etc/hostapd/hostapd.conf | grep '^interface=' | cut -d'=' -f2");
 
@@ -40,4 +53,24 @@ export async function getWPAPassphrase() {
     }
 
     return cleanOutput(stdout);
+}
+
+export async function getWirelessClients(intrfc) {
+    const {stdout, stderr} = await exec(`iw dev ${intrfc} station dump`);
+    
+    if (stderr) {
+        console.error(stderr);
+        return;
+    }
+
+    const lines = stdout.split(/\r?\n/);
+
+    // enumerate 'station' entries (each represents a wireless client)
+    let clientCount = lines.reduce((clientCount, line) => {
+        if (line.indexOf('Station', 0) > -1) {
+            return clientCount + 1;
+        }
+        return clientCount;
+    }, 0);
+    return clientCount;
 }
