@@ -6,7 +6,7 @@ import Modal from "./Modal";
 import Overlay from './Overlay';
 
 
-export default function Header({back = false, path = '/', title = '', ssid, passphrase}) {
+export default function Header({back = false, path = '/', title = '', ssid = null, passphrase = null}) {
 	const { url } = useLocation();
 
 	// Power Modals Flow
@@ -83,6 +83,8 @@ export default function Header({back = false, path = '/', title = '', ssid, pass
 								onClick={() => {
 									setShowPowerOverlay(true);
 									setOpen(false);
+
+									fetch(confirmedMethod == 'SHUTDOWN' ? '/api/shutdown' : '/api/reboot')
 								}}
 								class={`px-15 py-4 rounded text-lg text-white ${
 									confirmedMethod == 'SHUTDOWN'
