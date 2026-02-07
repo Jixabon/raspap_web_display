@@ -84,7 +84,9 @@ export default function Header({back = false, path = '/', title = '', ssid = nul
 									setShowPowerOverlay(true);
 									setOpen(false);
 
-									fetch(confirmedMethod == 'SHUTDOWN' ? '/api/shutdown' : '/api/reboot')
+									fetch(confirmedMethod == 'SHUTDOWN' ? '/api/shutdown' : '/api/reboot', {
+										method: 'POST'
+									})
 								}}
 								class={`px-15 py-4 rounded text-lg text-white ${
 									confirmedMethod == 'SHUTDOWN'
