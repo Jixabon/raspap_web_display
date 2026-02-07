@@ -6,8 +6,9 @@ A web interface for an integrated experience on a RaspAP device
 
 This project was inspired by [RaspAP E-Paper Display Controller](https://github.com/id8872/raspap_display) and the other similar projects.
 
-![Image of dashboard page with light theme](dashboard-light.png)
-![Image of dashboard page with dark theme](dashboard-dark.png)
+Light | Dark
+:-------------------------:|:-------------------------:
+![Image of dashboard page with light theme](dashboard-light.png)  |  ![Image of dashboard page with dark theme](dashboard-dark.png)
 
 ## Features
 
