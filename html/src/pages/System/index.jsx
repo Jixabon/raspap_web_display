@@ -4,6 +4,7 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import Overlay from '../../components/Overlay';
 import RaspAPLogo from "../../components/RaspAPLogo";
+import { SHORT_POLLING_INTERVAL } from "../../config";
 
 export function System() {
     const [data, setData] = useState(null);
@@ -41,11 +42,11 @@ export function System() {
         }
     };
 
+    var pollingInterval = null;
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const response = await fetch('/api/system');
-                console.log(response);
                 if (!response.ok) {
                 throw new Error('Network response was not ok');
                 }
@@ -60,7 +61,14 @@ export function System() {
         };
 
         fetchData();
-    }, []);
+		pollingInterval = setInterval(() => {
+			fetchData();
+		}, SHORT_POLLING_INTERVAL);
+
+		return () => {
+			clearInterval(pollingInterval);
+		}
+	}, [pollingInterval]);
 
     console.log(data, isLoading, error);
 

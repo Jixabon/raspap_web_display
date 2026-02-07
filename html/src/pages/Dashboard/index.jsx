@@ -8,6 +8,7 @@ import Overlay from '../../components/Overlay';
 
 import { Button } from "../../components/Button";
 import RaspAPLogo from "../../components/RaspAPLogo";
+import { LONG_POLLING_INTERVAL } from "../../config";
 
 export function Dashboard() {
 	const [data, setData] = useState(null);
@@ -51,6 +52,7 @@ export function Dashboard() {
 		uptime: 'up 11 hours, 38 minutes',
 	};
 
+	var pollingInterval = null;
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
@@ -69,7 +71,14 @@ export function Dashboard() {
 		};
 
 		fetchData();
-	}, []);
+		pollingInterval = setInterval(() => {
+			fetchData();
+		}, LONG_POLLING_INTERVAL);
+
+		return () => {
+			clearInterval(pollingInterval);
+		}
+	}, [pollingInterval]);
 
 	console.log(data, isLoading, error);
 
