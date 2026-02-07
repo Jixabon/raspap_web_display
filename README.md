@@ -84,6 +84,13 @@ Enable user linger
 ```
 sudo loginctl enable-linger pi
 ```
+Enable Auto Login
+```
+sudo raspi-config
+```
+- Choose option: 1 System Options
+- Choose option: S5 Boot / Auto Login
+- Choose option: B2 Console Autologin
 
 Install service for backend server
 ```
