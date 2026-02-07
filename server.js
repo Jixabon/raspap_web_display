@@ -49,7 +49,7 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
   }
   if (endpoints.includes('clients')) {
     const res_clients = await fetch_api(`/clients/${clientsInterface}`);
-    ENDPOINT_CACHE.clients = await res_clients.json();
+    ENDPOINT_CACHE.clients[clientsInterface] = await res_clients.json();
   }
   if (endpoints.includes('dhcp')) {
     const res_dhcp = await fetch_api('/dhcp');
@@ -67,11 +67,19 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
   if (raspap_version === '3.5.2') {
     if (endpoints.includes('system')) {
       ENDPOINT_CACHE.system.raspapVersion = await fallbacks.getRaspAPVersion();
+      ENDPOINT_CACHE.system.usedDisk = await fallbacks.getUsedDisk();
     }
 
     if (endpoints.includes('ap')) {
       ENDPOINT_CACHE.ap.interface = await fallbacks.getAPInterface();
       ENDPOINT_CACHE.ap.wpa_passphrase = await fallbacks.getWPAPassphrase();
+    }
+
+    if (endpoints.includes('clients')) {
+      let wirelessClients = await fallbacks.getWirelessClients(clientsInterface);
+      ENDPOINT_CACHE.clients[clientsInterface].active_wireless_clients = wirelessClients;
+      // ENDPOINT_CACHE.clients[clientsInterface].ethernetClients = await fallbacks.getEthernetClients();
+      ENDPOINT_CACHE.clients[clientsInterface].active_clients_amount = wirelessClients;
     }
   }
 
@@ -111,17 +119,18 @@ function getConnectionType(intrfc) {
  }
 
 app.get("/api/dashboard", async (req, res) => {
-  await refreshCache(['system', 'ap', 'clients'], ENDPOINT_CACHE.ap.interface || 'wlan0');
+  let clientsInterface = ENDPOINT_CACHE.ap.interface || 'wlan0';
+  await refreshCache(['system', 'ap', 'clients', 'networking'], clientsInterface);
 
   let connectionInterface = await getConnectionInterface();
   let connectionType = getConnectionType(connectionInterface);
 
-  let dashboardData = {
+  let payload = {
 		connection: {
 			type: connectionType,
 			ssid: connectionType == 'wireless' ? 'ssid' : null,
 			interface: connectionInterface,
-			ipv4: '192.168.1.25',
+			ipv4: ENDPOINT_CACHE.networking.interfaces[connectionInterface]?.IP_address,
 		},
 		revision: ENDPOINT_CACHE.system.rpiRevision,
 		hostname: ENDPOINT_CACHE.system.hostname,
@@ -129,8 +138,8 @@ app.get("/api/dashboard", async (req, res) => {
 			ssid: ENDPOINT_CACHE.ap.ssid,
       passphrase: ENDPOINT_CACHE.ap.wpa_passphrase,
 			interface: ENDPOINT_CACHE.ap.interface,
-			ipv4: '10.3.141.1',
-			clients_count: ENDPOINT_CACHE.clients.active_clients_amount,
+			ipv4: ENDPOINT_CACHE.networking.interfaces[ENDPOINT_CACHE.ap.interface]?.IP_address,
+			clients_count: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_clients_amount,
       hide_ssid: ENDPOINT_CACHE.ap.ignore_broadcast_ssid == '0' ? false : true
 		},
 
@@ -151,7 +160,30 @@ app.get("/api/dashboard", async (req, res) => {
 		uptime: ENDPOINT_CACHE.system.uptime,
 	};
   
-  res.json(dashboardData);
+  res.json(payload);
+});
+
+app.get("/api/system", async (req, res) => {
+  await refreshCache(['system', 'networking'], ENDPOINT_CACHE.ap.interface || 'wlan0');
+
+  let payload = {
+    hostname: ENDPOINT_CACHE.system.hostname,
+    uptime: ENDPOINT_CACHE.system.uptime,
+    systime: ENDPOINT_CACHE.system.systime,
+    usedMemory: ENDPOINT_CACHE.system.usedMemory,
+    usedDisk: ENDPOINT_CACHE.system.usedDisk,
+    processorCount: ENDPOINT_CACHE.system.processorCount,
+    LoadAvg1Min: ENDPOINT_CACHE.system.LoadAvg1Min,
+    systemLoadPercentage: ENDPOINT_CACHE.system.systemLoadPercentage,
+    systemTemperature: ENDPOINT_CACHE.system.systemTemperature,
+    operatingSystem: ENDPOINT_CACHE.system.operatingSystem,
+    kernelVersion: ENDPOINT_CACHE.system.kernelVersion,
+    rpiRevision: ENDPOINT_CACHE.system.rpiRevision,
+    raspapVersion: ENDPOINT_CACHE.system.raspapVersion,
+    interfaces: ENDPOINT_CACHE.networking.interfaces,
+	};
+  
+  res.json(payload);
 });
 
 app.get('/api/connect-qrcode', async (req, res) => {
