@@ -77,7 +77,7 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
 }
 
 async function getConnectionInterface() {
-  const { stdout, stderr } = await exec("ip route show default | awk '{print $5}'");
+  const { stdout, stderr } = await exec("ip route show default | awk 'NR==1 {print $5}'");
     let intrfc = stdout.trim();
 
     if (intrfc == "" || stderr) {
@@ -92,16 +92,16 @@ function getConnectionType(intrfc) {
 	    return 'unknown';
 	  }
 	  // classify interface type
-	  if (intrfc.match('/^eth0|enp\d+s\d+|ens\d+s\d+|enx[0-9a-f]*/')) {
+	  if (/^eth0|enp\d+s\d+|ens\d+s\d+|enx[0-9a-f]*/.test(intrfc)) {
 		  return 'ethernet';
 		}
-		if (intrfc.match('/^wlan\d+|wlp\d+s\d+|wlx[0-9a-f]*/')) {
+		if (/^wlan\d+|wlp\d+s\d+|wlx[0-9a-f]*/.test(intrfc)) {
 			return 'wireless';
 		}
-		if (intrfc.match('/^usb\d+|^eth[1-9]\d*/')) {
+		if (/^usb\d+|^eth[1-9]\d*/.test(intrfc)) {
 			return 'tethering';
 		}
-		if (intrfc.match('/^ppp\d+|wwan\d+|wwp\d+s\d+/')) {
+		if (/^ppp\d+|wwan\d+|wwp\d+s\d+/.test(intrfc)) {
 			return 'cellular';
 		}
     // if none match, return the interface name as a fallback
