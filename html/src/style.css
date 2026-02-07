@@ -20,3 +20,5 @@ body {
 main {
 	@apply mx-6 flex-grow;
 }
+
+* { scrollbar-width: none !important; }
