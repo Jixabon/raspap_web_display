@@ -8,4 +8,14 @@ export default defineConfig({
 		preact(),
 		tailwindcss()
 	],
+	server: {
+		allowedHosts: [
+			'raspap.local'
+		],
+		proxy: {
+			'/api': {
+				target: 'http://localhost:8085'
+			},
+		},
+	}
 });
