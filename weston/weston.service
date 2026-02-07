@@ -1,0 +1,13 @@
+[Unit]
+Description=Kiosk
+#After=network.targets
+
+[Service]
+User=pi
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+TTYPath=/dev/tty1
+ExecStart=/usr/bin/weston --log=/home/pi/weston.log -c /home/pi/raspap_web_display/weston/weston-kiosk.ini
+Restart=always
+
+[Install]
+WantedBy=default.target
