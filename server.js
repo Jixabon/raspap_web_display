@@ -74,6 +74,8 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
       ENDPOINT_CACHE.ap.wpa_passphrase = await fallbacks.getWPAPassphrase();
     }
   }
+
+  console.log(ENDPOINT_CACHE);
 }
 
 async function getConnectionInterface() {
@@ -128,7 +130,8 @@ app.get("/api/dashboard", async (req, res) => {
       passphrase: ENDPOINT_CACHE.ap.wpa_passphrase,
 			interface: ENDPOINT_CACHE.ap.interface,
 			ipv4: '10.3.141.1',
-			clients_count: ENDPOINT_CACHE.clients.active_client_amount,
+			clients_count: ENDPOINT_CACHE.clients.active_clients_amount,
+      hide_ssid: ENDPOINT_CACHE.ap.ignore_broadcast_ssid == '0' ? false : true
 		},
 
 		statuses: {
@@ -144,7 +147,7 @@ app.get("/api/dashboard", async (req, res) => {
 			firewall_active: false,
 		},
 
-    version: ENDPOINT_CACHE.system.raspap_version,
+    version: ENDPOINT_CACHE.system.raspapVersion,
 		uptime: ENDPOINT_CACHE.system.uptime,
 	};
   
@@ -202,13 +205,13 @@ app.get('/api/hostname-qrcode', async (req, res) => {
   );
 });
 
-app.post("/api/shutdown", (req, res) => {
-  exec("sudo powerdown");
+app.post("/api/shutdown", async (req, res) => {
+  await exec("sudo powerdown");
   res.json({ ok: true });
 });
 
-app.post("/api/reboot", (req, res) => {
-  exec("sudo reboot");
+app.post("/api/reboot", async (req, res) => {
+  await exec("sudo reboot");
   res.json({ ok: true });
 });
 
