@@ -20,7 +20,7 @@ export default function Header({back = false, path = '/', title = '', ssid, pass
 
 	return (
 		<>
-			<header className="sticky top-0 flex justify-between items-center w-full px-6 py-4 bg-dark-blue/50 backdrop-blur-sm">
+			<header className="sticky top-0 flex justify-between items-center w-full px-6 py-4 bg-white/50 dark:bg-dark-blue/50 backdrop-blur-sm">
 				{back ? (
 					<>
 						<a href={path}><i className="fa-solid fa-arrow-left text-3xl"></i></a>
