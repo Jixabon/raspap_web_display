@@ -80,12 +80,35 @@ cp .env.example .env
 nano .env
 ```
 
-Copy the service file, enable, start and reboot
+Enable user linger
+```
+sudo loginctl enable-linger pi
+```
+
+Install service for backend server
+```
+sudo cp raspap-web.service /etc/systemd/system/raspap-web.service
+sudo systemctl enable raspap-web.service
+sudo systemctl start raspap-web.service
+```
+
+Install service for browser
 ```
 cp weston/weston.service /etc/systemd/system/weston.service
 sudo systemctl enable weston.service
+```
+
+You can either start it right away
+```
 sudo systemctl start weston.service
 ```
+
+or reboot and have it auto start
+```
+sudo reboot
+```
+
+
 
 ## Development and Customization
 
