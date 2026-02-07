@@ -1,0 +1,13 @@
+[Unit]
+Description=RaspAP Web Display Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/node /home/pi/raspap_web_display/server.js
+Restart=always
+User=pi
+Environment=NODE_ENV=production
+WorkingDirectory=/home/pi/raspap_web_display
+
+[Install]
+WantedBy=multi-user.target
