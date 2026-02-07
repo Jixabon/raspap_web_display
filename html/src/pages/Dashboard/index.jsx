@@ -95,7 +95,7 @@ export function Dashboard() {
 				title="Scan for Admin"
 			>
 				<div className="flex flex-col items-center gap-3">
-					<img src="/hostname-qrcode" style={{width: 250, height: 250}}></img>
+					<img src="/api/hostname-qrcode" style={{width: 250, height: 250}}></img>
 				</div>
 			</Modal>
 			<main className="flex flex-col h-full">
@@ -110,7 +110,7 @@ export function Dashboard() {
 							<span>{data.connection.ipv4}</span>
 						</div>
 						<div className="flex flex-col justify-center items-center">
-							<span><i class="fa-solid fa-server text-4xl mb-4"></i></span>
+							<span><i className="fa-solid fa-server text-4xl mb-4"></i></span>
 							<span>{data.revision}</span>
 							<span className="text-teal text-underline"
 								onClick={() => setShowAdminQR(true)}>{data.hostname}.local</span>

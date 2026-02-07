@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import util from 'node:util';
 import child_process from 'child_process';
+import qrcode from 'qrcode';
 
 import * as fallbacks from './fallbacks.js';
 
@@ -37,7 +38,6 @@ async function fetch_api(path, method = 'GET') {
 }
 
 async function refreshCache(endpoints, clientsInterface = 'wlan0') {
-  console.log('Refreshing Cache')
   // @TODO add catches
   if (endpoints.includes('system')) {
     const res_system = await fetch_api('/system');
@@ -61,14 +61,10 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
   }
 
   // Get API version to know what datapoints need to use fallbacks
-  console.log('Getting RaspAP Version');
   let raspap_version = await fallbacks.getRaspAPVersion();
-  console.log('RaspAP v' + raspap_version);
 
-  
   // API version fallbacks
-  console.log('Checking Fallbacks')
-  if (raspap_version && raspap_version === '3.5.2') {
+  if (raspap_version === '3.5.2') {
     if (endpoints.includes('system')) {
       ENDPOINT_CACHE.system.raspapVersion = await fallbacks.getRaspAPVersion();
     }
@@ -82,16 +78,13 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
 
 async function getConnectionInterface() {
   const { stdout, stderr } = await exec("ip route show default | awk '{print $5}'");
-    let output = await stdout;
-    let error = await stderr;
-    let intrfc = output.trim();
-    console.log(output, error, intrfc);
+    let intrfc = stdout.trim();
 
-    if (intrfc == "" || error) {
+    if (intrfc == "" || stderr) {
 	    return null;
 	  }
 
-    return output.trim();
+    return intrfc;
 }
 
 function getConnectionType(intrfc) {
@@ -159,7 +152,6 @@ app.get("/api/dashboard", async (req, res) => {
 });
 
 app.get('/api/connect-qrcode', async (req, res) => {
-  console.log('connect-qr')
   await refreshCache(['ap']);
 
   let connectionString = '';
@@ -169,42 +161,45 @@ app.get('/api/connect-qrcode', async (req, res) => {
     connectionString = `WIFI:T:WPA;S:${ENDPOINT_CACHE.ap.ssid};P:${ENDPOINT_CACHE.ap.wpa_passphrase};;`;
   }
 
-  const { stdout, stderr } = await exec(
-    `npx qrcode -o ${path.join(__dirname, 'connect-qrcode.svg')} "${connectionString}"`,
-    { cwd: __dirname }
+  qrcode.toFile(
+    path.join(__dirname, 'connect-qrcode.svg'),
+    connectionString,
+    {
+      type: 'svg',
+      margin: 1
+    },
+    (err) => {
+      if (err) {
+        console.error(err);
+        res.statusCode(500).json(err);
+        return;
+      }
+
+      res.sendFile(path.join(__dirname, 'connect-qrcode.svg'));
+    }
   );
-  const output = await stdout;
-  const error = await stderr;
-
-  console.log(output);
-
-  if (!error) {
-    res.sendFile(path.join(__dirname, 'connect-qrcode.svg'));
-  } else {
-    console.error(error);
-    res.statusCode(500).exec();
-  }
 });
 
 app.get('/api/hostname-qrcode', async (req, res) => {
-  console.log('hostname-qr')
   await refreshCache(['system']);
 
-  const { stdout, stderr } = await exec(
-    `npx qrcode -o ${path.join(__dirname, 'hostname-qrcode.svg')} "http://${ENDPOINT_CACHE.system.hostname.local}"`,
-    { cwd: __dirname }
+  qrcode.toFile(
+    path.join(__dirname, 'hostname-qrcode.svg'),
+    `http://${ENDPOINT_CACHE.system.hostname}.local`,
+    {
+      type: 'svg',
+      margin: 1
+    },
+    (err) => {
+      if (err) {
+        console.error(err);
+        res.statusCode(500).json(err);
+        return;
+      }
+
+      res.sendFile(path.join(__dirname, 'hostname-qrcode.svg'));
+    }
   );
-  const output = await stdout;
-  const error = await stderr;
-
-  console.log(output);
-
-  if (!error) {
-    res.sendFile(path.join(__dirname, 'hostname-qrcode.svg'));
-  } else {
-    console.error(error);
-    res.statusCode(500).exec();
-  }
 });
 
 app.post("/api/shutdown", (req, res) => {
@@ -223,6 +218,6 @@ app.get(/^(?!\/api).*/, (req, res) => {
 
 // app.use(express.static("html/dist"));
 
-app.listen(8085, () => {
+app.listen(8085, process.argv.includes('--host') ? '0.0.0.0' : '127.0.0.1', () => {
   console.log("Backend running on port 8085");
 });
