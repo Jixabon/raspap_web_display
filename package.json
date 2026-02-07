@@ -7,6 +7,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
+    "host": "node server.js --host",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
