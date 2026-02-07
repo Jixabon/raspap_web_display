@@ -19,7 +19,7 @@ export function Dashboard() {
 	const default_data = {
 		connection: {
 			type: 'ethernet',
-			ssid: 'none',
+			ssid: null,
 			interface: 'eth0',
 			ipv4: '192.168.1.25',
 		},
@@ -31,6 +31,7 @@ export function Dashboard() {
 			interface: 'wlan0',
 			ipv4: '10.3.141.1',
 			clients_count: 0,
+			hide_ssid: false,
 		},
 
 		statuses: {
@@ -54,7 +55,6 @@ export function Dashboard() {
 		const fetchData = async () => {
 			try {
 				const response = await fetch('/api/dashboard');
-				console.log(response);
 				if (!response.ok) {
 				throw new Error('Network response was not ok');
 				}
@@ -101,12 +101,12 @@ export function Dashboard() {
 			<main className="flex flex-col h-full">
 				<div className="flex-grow flex items-center">
 					<div className="w-full grid grid-cols-3">
-						<div className="flex flex-col justify-center items-start">
+						<div className="self-start flex flex-col justify-center items-start">
 							<div className="flex flex-col items-center mb-3">
 								<span className="font-bold text-lg capitalize">{data.connection.type}</span>
 								<span><i className={`fa-solid ${connectionTypeIcons[data.connection.type] || 'fa-circle-question'} text-4xl`}></i></span>
 							</div>
-							<span>{data.connection.ssid}</span>
+							{data.connection.ssid && <span>{data.connection.ssid}</span>}
 							<span>{data.connection.ipv4}</span>
 						</div>
 						<div className="flex flex-col justify-center items-center">
@@ -115,12 +115,12 @@ export function Dashboard() {
 							<span className="text-teal text-underline"
 								onClick={() => setShowAdminQR(true)}>{data.hostname}.local</span>
 						</div>
-						<div className="flex flex-col justify-center items-end">
+						<div className="self-start flex flex-col justify-center items-end">
 							<div className="flex flex-col items-center mb-3">
 								<span className="font-bold text-lg">AP</span>
 								<span><i className="fa-solid fa-bullseye text-4xl"></i></span>
 							</div>
-							<span>{data.host.ssid}</span>
+							<span>{data.host.hide_ssid && 'Hidden: '}{data.host.ssid}</span>
 							<span>{data.host.ipv4}</span>
 							<span>Clients: {data.host.clients_count}</span>
 						</div>
@@ -162,7 +162,7 @@ export function Dashboard() {
 					<a href="/system"><DashboardButton icon="fa-circle-info" text="System" /></a>
 				</div>
 			</main>
-			<Footer version={data.raspapVersion} uptime={data.uptime} />
+			<Footer version={data.version} uptime={data.uptime} />
 		</>
 	);
 }
