@@ -6,7 +6,7 @@ import Modal from "../../components/Modal";
 import Overlay from '../../components/Overlay';
 
 
-import { Button } from "../../components/Button";
+import Button from "../../components/Button";
 import RaspAPLogo from "../../components/RaspAPLogo";
 import { LONG_POLLING_INTERVAL } from "../../config";
 
@@ -164,7 +164,7 @@ export function Dashboard() {
 				</div>
 				<div className="grid grid-cols-2 gap-4">
 					<a href="/connection"><DashboardButton icon="fa-globe" text="Connection" /></a>
-					<a href="/ap"><DashboardButton icon="fa-bullseye" text="AP" /></a>
+					<a href="/access-point"><DashboardButton icon="fa-bullseye" text="AP" /></a>
 					<a href="/vpn"><DashboardButton icon="fa-shield-halved" text="VPN (WIP)" /></a>
 					<a href="/firewall"><DashboardButton icon="fa-fire-flame-curved" text="Firewall (WIP)" /></a>
 					<a href="/settings"><DashboardButton icon="fa-cog" text="Settings" /></a>
