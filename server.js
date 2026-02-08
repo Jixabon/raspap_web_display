@@ -72,6 +72,7 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
 
     if (endpoints.includes('ap')) {
       ENDPOINT_CACHE.ap.interface = await fallbacks.getAPInterface();
+      ENDPOINT_CACHE.ap.frequency_band = await fallbacks.getFrequencyBand(clientsInterface);
       ENDPOINT_CACHE.ap.wpa_passphrase = await fallbacks.getWPAPassphrase();
     }
 
@@ -116,7 +117,7 @@ function getConnectionType(intrfc) {
 		}
     // if none match, return the interface name as a fallback
     return `other (${intrfc})`;
- }
+}
 
 app.get("/api/dashboard", async (req, res) => {
   let clientsInterface = ENDPOINT_CACHE.ap.interface || 'wlan0';
@@ -159,6 +160,37 @@ app.get("/api/dashboard", async (req, res) => {
     version: ENDPOINT_CACHE.system.raspapVersion,
 		uptime: ENDPOINT_CACHE.system.uptime,
 	};
+  
+  res.json(payload);
+});
+
+app.get("/api/ap", async (req, res) => {
+  await refreshCache(['ap', 'dhcp', 'networking', 'clients'], ENDPOINT_CACHE.ap.interface || 'wlan0');
+
+  let payload = {
+    interface: ENDPOINT_CACHE.ap.interface,
+    ssid: ENDPOINT_CACHE.ap.ssid,
+    hide_ssid: ENDPOINT_CACHE.ap.ignore_broadcast_ssid == '0' ? false : true,
+    wpa_key_mgmt: ENDPOINT_CACHE.ap.wpa_key_mgmt,
+    wpa: ENDPOINT_CACHE.ap.wpa,
+    passphrase: ENDPOINT_CACHE.ap.wpa_passphrase,
+    frequency_band: ENDPOINT_CACHE.ap.frequency_band,
+    channel: ENDPOINT_CACHE.ap.channel,
+    hw_mode: ENDPOINT_CACHE.ap.hw_mode,
+    ipv4: ENDPOINT_CACHE.networking.interfaces[ENDPOINT_CACHE.ap.interface]?.IP_address,
+    dhcp: {
+      range_start: ENDPOINT_CACHE.dhcp.range_start,
+      range_end: ENDPOINT_CACHE.dhcp.range_end,
+      range_subnet_mask: ENDPOINT_CACHE.dhcp.range_subnet_mask,
+      range_lease_time: ENDPOINT_CACHE.dhcp.range_lease_time,
+      range_gateway: ENDPOINT_CACHE.dhcp.range_gateway,
+      range_nameservers: ENDPOINT_CACHE.dhcp.range_nameservers
+    },
+    wireless_clients_count: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_wireless_clients,
+    // ethernet_clients_count: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_ethernet_clients,
+    clients_count: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_clients_amount,
+    clients: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_clients
+  };
   
   res.json(payload);
 });
@@ -247,12 +279,12 @@ app.post("/api/reboot", async (req, res) => {
   res.json({ ok: true });
 });
 
-app.get(/^(?!\/api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, 'html/dist', req.path));
+app.use(express.static("html/dist"));
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'html/dist/index.html'));
 });
 
-// app.use(express.static("html/dist"));
 
 app.listen(8085, process.argv.includes('--host') ? '0.0.0.0' : '127.0.0.1', () => {
-  console.log("Backend running on port 8085");
+  console.log(`Backend running on port ${process.argv.includes('--host') ? '0.0.0.0' : '127.0.0.1'}:8085`);
 });

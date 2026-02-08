@@ -44,6 +44,28 @@ export async function getAPInterface() {
     return cleanOutput(stdout);
 }
 
+export async function getFrequencyBand(intrfc) {
+    const {stdout, stderr} = await exec(`iw dev ${intrfc} info 2>/dev/null`);
+    
+    if (stderr) {
+        console.error(stderr);
+        return;
+    }
+
+    let matches = (stdout || "").match(/channel\s+\d+\s+\((\d+)\s+MHz\)/);
+
+    if (matches) {
+        let frequency = Number.parseInt(matches[1]);
+
+        if (frequency >= 2400 && frequency < 2500) {
+            return "2.4";
+        } else if (frequency >= 5000 && frequency < 6000) {
+            return "5";
+        }
+        return null;
+    }
+}
+
 export async function getWPAPassphrase() {
     const {stdout, stderr} = await exec("sed -En 's/wpa_passphrase=(.*)/\\1/p' /etc/hostapd/hostapd.conf");
     
