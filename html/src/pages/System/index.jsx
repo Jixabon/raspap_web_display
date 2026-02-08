@@ -117,7 +117,10 @@ export function System() {
                 </div>
                 <div>
                     <details className="border rounded">
-                        <summary className="rounded px-4 py-2 text-3xl">Interfaces</summary>
+                        <summary className="flex justify-between items-center rounded px-4 py-2 text-2xl">
+                            <span>Interfaces ({Object.keys(data?.interfaces).length})</span>
+                            <span><i className="fa-solid fa-plus"></i></span>
+                        </summary>
                         {Object.entries(data?.interfaces).map(([key, item]) => {
                             return (
                                 <div className="mt-5 px-4 last:mb-5">
