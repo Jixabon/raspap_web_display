@@ -6,6 +6,7 @@ import Overlay from '../../components/Overlay';
 import RaspAPLogo from '../../components/RaspAPLogo';
 import Modal from "../../components/Modal";
 import Button from "../../components/Button";
+import TimePickerModal from "../../components/TimePicker";
 import { setThemeBySchedule } from "../..";
 
 export function Settings() {
@@ -29,12 +30,21 @@ export function Settings() {
         if (!hm) return null;
         return Number.parseInt(hm[0]) * 60 + Number.parseInt(hm[1]);
     }
+
+    function format24to12(time) {
+        let hrs = Number.parseInt(time.substr(0, 2));
+        let isAM = hrs <= 12;
+        return `${isAM ? time : time.replace(hrs, hrs - 12)} ${isAM ? 'AM' : 'PM'}`;
+    }
     
+    const [currentTheme, setCurrentTheme] = useState(localStorage.getItem('theme') || 'schedule');
+    const [lightTime, setLightTime] = useState(minutesToHours(localStorage.getItem('lightMinutes')) || '06:00');
+    const [showLightPicker, setShowLightPicker] = useState(false);
+    const [darkTime, setDarkTime] = useState(minutesToHours(localStorage.getItem('darkMinutes')) || '18:00');
+    const [showDarkPicker, setShowDarkPicker] = useState(false);
+
     const [showTimeoutModal, setShowTimeoutModal] = useState(false);
     const [screenTimeout, setScreenTimeout] = useState(0);
-    const [lightTime, setLightTime] = useState(minutesToHours(localStorage.getItem('lightMinutes')) || '06:00');
-    const [darkTime, setDarkTime] = useState(minutesToHours(localStorage.getItem('darkMinutes')) || '18:00');
-    const [currentTheme, setCurrentTheme] = useState(localStorage.getItem('theme') || 'schedule');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -107,7 +117,7 @@ export function Settings() {
                 <h2 className="font-bold text-2xl mb-2">Theme</h2>
                 <div className="grid grid-cols-3 border border-dark-blue dark:border-white rounded-lg mb-8">
                     <button
-                        className={`border-r border-dark-blue dark:border-white ${
+                        className={`border-r border-dark-blue dark:border-white rounded-l-lg ${
                             currentTheme === 'schedule' ? 'bg-dark-blue dark:bg-white text-white dark:text-dark-blue' : ''
                         }`}
                         onClick={() => setTheme('schedule')}
@@ -129,7 +139,7 @@ export function Settings() {
                         </div>
                     </button>
                     <button
-                        className={`${
+                        className={`rounded-r-lg ${
                             currentTheme === 'dark' ? 'bg-dark-blue dark:bg-white text-white dark:text-dark-blue' : ''
                         }`}
                         onClick={() => setTheme('dark')}
@@ -144,36 +154,51 @@ export function Settings() {
                 <h2 className="font-bold text-2xl mb-2">Theme Schedule</h2>
                 <div className="flex gap-3 mb-8">
                     <div className="flex flex-col">
-                        <span className="font-bold text-lg">Set Light @</span>
+                        <span className="font-bold text-lg mb-1">Set Light @</span>
                         <input
-                            type="time"
-                            className="border rounded-lg p-2"
-                            value={lightTime}
-                            onChange={(e) => {
-                                setLightTime(e.target.value);
-                                localStorage.lightMinutes = timeToMinutes(e.target.value);
+                            type="text"
+                            readOnly
+                            value={format24to12(lightTime)}
+                            onClick={() => setShowLightPicker(true)}
+                            className="p-2 text-lg border border rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <TimePickerModal
+                            isOpen={showLightPicker}
+                            onClose={() => setShowLightPicker(false)}
+                            onChange={(time) => {
+                                setLightTime(time);
+                                localStorage.lightMinutes = timeToMinutes(time);
                             }}
-                        ></input>
+                            initialTime={lightTime}
+                        />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-bold text-lg">Set Dark @</span>
+                        <span className="font-bold text-lg mb-1">Set Dark @</span>
                         <input
-                            type="time"
-                            className="border rounded-lg p-2"
-                            value={darkTime}
-                            onChange={(e) => {
-                                setDarkTime(e.target.value);
-                                localStorage.darkMinutes = timeToMinutes(e.target.value);
+                            type="text"
+                            readOnly
+                            value={format24to12(darkTime)}
+                            onClick={() => setShowDarkPicker(true)}
+                            className="p-2 text-lg border border rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <TimePickerModal
+                            isOpen={showDarkPicker}
+                            onClose={() => setShowDarkPicker(false)}
+                            onChange={(time) => {
+                                setDarkTime(time);
+                                localStorage.darkMinutes = timeToMinutes(time);
                             }}
-                        ></input>
+                            initialTime={darkTime}
+                        />
                     </div>
                 </div>
 
                 <h2 className="font-bold text-2xl mb-2">Screen Timeout</h2>
-                <div className="flex gap-3 mb-8">
-                    <input type="number" className="border rounded-lg p-2"
+                <div className="flex items-center gap-3 mb-8">
+                    <input type="number" className="border rounded-lg px-4 py-2"
                         min="0" max="1000" value={screenTimeout} onChange={(e) => setScreenTimeout(e.target.value)}></input>
-                    <Button className="text-white" onClick={() => setShowTimeoutModal(true)}>Set</Button>
+                    <span>Seconds</span>
+                    <Button className="px-4 py-2 text-white" onClick={() => setShowTimeoutModal(true)}>Set</Button>
                 </div>
                 <Modal
                     isOpen={showTimeoutModal}
@@ -187,7 +212,7 @@ export function Settings() {
                     </div>
                 </Modal>
 
-                <h2 className="font-bold text-2xl mb-2">Brightness</h2>
+                {/* <h2 className="font-bold text-2xl mb-2">Brightness</h2>
                 <div className="flex gap-3 mb-8">
                     <input type="range" className="w-full"
                         min="0" max="100" value="50" disabled></input>
@@ -213,7 +238,7 @@ export function Settings() {
                                 min="0" max="100" step="1" disabled></input>
                         </div>
                     </div>
-                </div>
+                </div> */}
             </main>
             <Footer />
         </>
