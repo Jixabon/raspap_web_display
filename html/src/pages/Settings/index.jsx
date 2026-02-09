@@ -152,16 +152,15 @@ export function Settings() {
                 </div>
 
                 <h2 className="font-bold text-2xl mb-2">Theme Schedule</h2>
-                <div className="flex gap-3 mb-8">
-                    <div className="flex flex-col">
+                <div className="grid grid-cols-2 gap-3 mb-8">
+                    <div className="self-stretch flex flex-col">
                         <span className="font-bold text-lg mb-1">Set Light @</span>
-                        <input
-                            type="text"
-                            readOnly
-                            value={format24to12(lightTime)}
+                        <button
                             onClick={() => setShowLightPicker(true)}
                             className="p-2 text-lg border border rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                        >
+                            {format24to12(lightTime)}
+                        </button>
                         <TimePickerModal
                             isOpen={showLightPicker}
                             onClose={() => setShowLightPicker(false)}
@@ -172,15 +171,14 @@ export function Settings() {
                             initialTime={lightTime}
                         />
                     </div>
-                    <div className="flex flex-col">
+                    <div className="self-stretch flex flex-col">
                         <span className="font-bold text-lg mb-1">Set Dark @</span>
-                        <input
-                            type="text"
-                            readOnly
-                            value={format24to12(darkTime)}
+                        <button
                             onClick={() => setShowDarkPicker(true)}
                             className="p-2 text-lg border border rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                        >
+                           {format24to12(darkTime)}
+                        </button>
                         <TimePickerModal
                             isOpen={showDarkPicker}
                             onClose={() => setShowDarkPicker(false)}
