@@ -118,7 +118,7 @@ export function Settings() {
                 <div className="grid grid-cols-3 border border-dark-blue dark:border-white rounded-lg mb-8">
                     <button
                         className={`border-r border-dark-blue dark:border-white rounded-l-lg ${
-                            currentTheme === 'schedule' ? 'bg-dark-blue dark:bg-white text-white dark:text-dark-blue' : ''
+                            currentTheme === 'schedule' ? 'bg-teal text-white' : ''
                         }`}
                         onClick={() => setTheme('schedule')}
                     >
@@ -129,7 +129,7 @@ export function Settings() {
                     </button>
                     <button
                         className={`border-r border-dark-blue dark:border-white ${
-                            currentTheme === 'light' ? 'bg-dark-blue dark:bg-white text-white dark:text-dark-blue' : ''
+                            currentTheme === 'light' ? 'bg-teal text-white' : ''
                         }`}
                         onClick={() => setTheme('light')}
                     >
@@ -140,7 +140,7 @@ export function Settings() {
                     </button>
                     <button
                         className={`rounded-r-lg ${
-                            currentTheme === 'dark' ? 'bg-dark-blue dark:bg-white text-white dark:text-dark-blue' : ''
+                            currentTheme === 'dark' ? 'bg-teal text-white' : ''
                         }`}
                         onClick={() => setTheme('dark')}
                     >
