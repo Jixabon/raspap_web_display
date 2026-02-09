@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
+import fs from 'fs/promises';
 import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -84,7 +85,7 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
     }
   }
 
-  console.log(ENDPOINT_CACHE);
+  // console.log(ENDPOINT_CACHE);
 }
 
 async function getConnectionInterface() {
@@ -218,6 +219,27 @@ app.get("/api/system", async (req, res) => {
   res.json(payload);
 });
 
+app.get("/api/settings", async (req, res) => {
+  // Get Screen Timeout
+  let screenTimeout = 0;
+  const data = await fs.readFile(
+    path.join(__dirname, process.env.WESTON_KIOSK_INI),
+    'utf8'
+  );
+
+  if (data.includes('idle-time=')) {
+    let matches = data.match(/^idle-time=(\d+)$/m);
+    console.log(matches);
+    screenTimeout = Number.parseInt(matches[1]);
+  }
+
+  let payload = {
+    screen_timeout: screenTimeout,
+	};
+  
+  res.json(payload);
+});
+
 app.get('/api/connect-qrcode', async (req, res) => {
   await refreshCache(['ap']);
 
@@ -267,6 +289,82 @@ app.get('/api/hostname-qrcode', async (req, res) => {
       res.sendFile(path.join(__dirname, 'hostname-qrcode.svg'));
     }
   );
+});
+
+app.post('/api/screen-timeout/:seconds', async (req, res) => {
+  try {
+    const seconds = parseInt(req.params.seconds, 0);
+
+    // Basic validation
+    if (isNaN(seconds) || seconds < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Seconds must be a valid non-negative number'
+      });
+    }
+
+    // 1. Read current config
+    const data = await fs.readFile(
+      path.join(__dirname, process.env.WESTON_KIOSK_INI),
+      'utf8'
+    );
+
+    // 2. Update or add idle-time
+    let newContent;
+
+    if (data.includes('idle-time=')) {
+        // Replace existing idle-time line
+        newContent = data.replace(
+            /^idle-time=\d+$/m,
+            `idle-time=${seconds}`
+        );
+    } else {
+        // Add idle-time to [shell] section (most common place)
+        // This is a simple but quite reliable approach
+        if (data.includes('[shell]')) {
+            newContent = data.replace(
+                /(\[shell\]\n)/,
+                `$1idle-time=${seconds}\n`
+            );
+        } else {
+            // If [shell] section doesn't exist → append at the end
+            newContent = data + `\n[shell]\nidle-time=${seconds}\n`;
+        }
+    }
+
+    // 3. Write updated config
+    await fs.writeFile(
+      path.join(__dirname, process.env.WESTON_KIOSK_INI),
+      newContent,
+      'utf8'
+    );
+
+    // Restart Service
+    try {
+        const {stdout, stderr} = await exec('sudo systemctl restart weston.service');
+
+        if (stderr) {
+          console.error(stderr);
+        }
+    } catch (e) {
+        console.error('Failed to restart weston.service:', e);
+    }
+
+    res.json({
+        success: true,
+        message: `Screen timeout set to ${seconds} seconds`,
+        newValue: seconds
+    });
+
+  } catch (error) {
+    console.error('Error updating weston idle-time:', error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update screen timeout',
+      error: error.message
+    });
+  }
 });
 
 app.post("/api/shutdown", async (req, res) => {
