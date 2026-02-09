@@ -77,14 +77,14 @@ const TimePickerModal = ({ isOpen, onClose, onChange, initialTime = "12:00" }) =
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg w-[320px] p-6 shadow-2xl"
+        className="bg-white dark:bg-dark-blue rounded-lg w-[320px] p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Time display */}
         <div className="text-6xl font-light text-center mb-6 tracking-tight">
           <span
             className={`px-4 py-2 rounded-lg cursor-pointer ${
-              mode === 'hours' ? 'bg-teal text-white' : 'text-gray-800'
+              mode === 'hours' ? 'bg-teal text-white' : 'text-dark-blue dark:text-white'
             }`}
             onClick={() => setMode('hours')}
           >
@@ -93,7 +93,7 @@ const TimePickerModal = ({ isOpen, onClose, onChange, initialTime = "12:00" }) =
           <span className="mx-1">:</span>
           <span
             className={`px-4 py-2 rounded-lg cursor-pointer ${
-              mode === 'minutes' ? 'bg-teal text-white' : 'text-gray-800'
+              mode === 'minutes' ? 'bg-teal text-white' : 'text-dark-blue dark:text-white'
             }`}
             onClick={() => setMode('minutes')}
           >
@@ -103,14 +103,14 @@ const TimePickerModal = ({ isOpen, onClose, onChange, initialTime = "12:00" }) =
 
         {/* AM/PM */}
         <div className="flex justify-center mb-6">
-          <div className="inline-flex rounded-lg bg-gray-200 p-1">
+          <div className="inline-flex rounded-lg bg-gray-200 dark:bg-teal p-1">
             <button
               onClick={() => {
                 setIsPM(false);
                 if (hour24 >= 12) setHour24(hour24 - 12);
               }}
               className={`px-6 py-1.5 text-sm font-medium rounded-lg transition ${
-                !isPM ? 'bg-white shadow-sm text-dark-blue' : 'text-gray-600'
+                !isPM ? 'bg-white dark:bg-dark-blue shadow-sm text-dark-blue dark:text-white' : 'text-dark-blue dark:text-white'
               }`}
             >
               AM
@@ -121,7 +121,7 @@ const TimePickerModal = ({ isOpen, onClose, onChange, initialTime = "12:00" }) =
                 if (hour24 < 12) setHour24(hour24 + 12);
               }}
               className={`px-6 py-1.5 text-sm font-medium rounded-lg transition ${
-                isPM ? 'bg-white shadow-sm text-dark-blue' : 'text-gray-600'
+                isPM ? 'bg-white dark:bg-dark-blue shadow-sm text-dark-blue dark:text-white' : 'text-dark-blue dark:text-white'
               }`}
             >
               PM
@@ -131,7 +131,7 @@ const TimePickerModal = ({ isOpen, onClose, onChange, initialTime = "12:00" }) =
 
         {/* Clock face */}
         <div
-          className="relative w-[260px] h-[260px] mx-auto mb-8 rounded-full bg-gray-100 select-none touch-none"
+          className="relative w-[260px] h-[260px] mx-auto mb-8 rounded-full bg-gray-100 dark:bg-dark-blue select-none touch-none"
           onPointerDown={handlePointerMove}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -190,7 +190,7 @@ const TimePickerModal = ({ isOpen, onClose, onChange, initialTime = "12:00" }) =
         <div className="flex justify-between gap-4 mt-2">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 text-gray-700 font-medium rounded-lg border border-teal"
+            className="px-6 py-2.5 text-teal font-medium rounded-lg border border-teal"
           >
             Cancel
           </button>
