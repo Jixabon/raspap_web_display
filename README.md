@@ -15,24 +15,38 @@ Light | Dark
 - Dashboard
     - AP QR Code and Info
     - Power Controls
-    - Glanceable Interface/AP/Status Info
+    - Connection/Hardware/AP/Status Info at a glance
     - Quick Buttons
         - Connection
         - AP
-        - VPN
-        - Firewall
+        - VPN (WIP)
+        - Firewall (WIP)
         - Settings
         - System Info
+- AP
+    - AP Info
+    - Interface/DHCP Info
+    - Active Client List
+        - Wireless
+        - Ethernet (WIP)
 - Settings
-    - Theme toggle
-    - Theme schedule
-    - Brightness control
-    - Brightness schedule
+    - Theme control
+        - Schedule/Light/Dark
+        - Set schedule times
+    - Screen Timeout
 - System Info
     - RaspAP Info
     - System Versions
     - System Metrics
-    - Interfaces (Accordian)
+    - Interfaces (Accordion)
+
+## Feature ToDos
+
+- Brightness control
+    - Brightness %
+    - Brightness Schedule
+- Landscape Orientation Support
+- AdBlock, VPN and Firewall Support
 
 ## How's it work?
 
@@ -40,14 +54,14 @@ RaspAP Web Display uses the following tools to make an engaging experience
 
 - NodeJS (Backend Server as well as front end static files)
 - Preact (Quick and smooth front end templating)
-- Weston (A desktop without the extras)
-- Firefox (Gives us a browser to load the interface in kiosk mode)
+- Labwc (A desktop without the extras)
+- Squeekboard (On-Screen keyboard)
+- [Chromium](FAQ.md#why-chromium) (Gives us a browser to load the interface in kiosk mode)
 
 It leverages the REST API included with RaspAP to gather the necessary data. While it is experimental, the approach is to have fallbacks on a version basis to fill in the gaps and shortcomings. Instead of creating the wheel twice, it's better to focus efforts on improving the API for everyone's benefit.
 
 ## Setup
-
-> There's no install script yet so here are the steps to follow
+> [I already installed with Weston](FAQ.md#what-to-do-if-i-installed-with-weston)
 
 Start by cloning the repository to your home directory (usually `/home/pi` or `~/`
 ```
@@ -55,67 +69,19 @@ cd ~/
 git clone https://github.com/Jixabon/raspap_web_display.git
 ```
 
-Add the NodeJS APT Repository
+Run the install script
 ```
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-```
-
-Install necessary apt packages
-```
-sudo apt update
-sudo apt install \
-  weston \
-  firefox-esr \
-  nodejs
+cd ~/raspap_web_display
+sudo ./install.sh
 ```
 
-Install server dependencies
-```
-npm install
-```
-
-Copy the `.env.example` and update the `RASPAP_API_KEY` with the key from your system
-```
-cp .env.example .env
-nano .env
-```
-
-Enable user linger
-```
-sudo loginctl enable-linger pi
-```
 Enable Auto Login
 ```
 sudo raspi-config
 ```
 - Choose option: 1 System Options
-- Choose option: S5 Boot / Auto Login
-- Choose option: B2 Console Autologin
-
-Install service for backend server
-```
-sudo cp raspap-web.service /etc/systemd/system/raspap-web.service
-sudo systemctl enable raspap-web.service
-sudo systemctl start raspap-web.service
-```
-
-Install service for browser
-```
-cp weston/weston.service /etc/systemd/system/weston.service
-sudo systemctl enable weston.service
-```
-
-You can either start it right away
-```
-sudo systemctl start weston.service
-```
-
-or reboot and have it auto start
-```
-sudo reboot
-```
-
-
+- Choose option: S6 Auto Login
+- Choose option: Yes/OK/Finish
 
 ## Development and Customization
 
