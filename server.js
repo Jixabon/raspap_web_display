@@ -229,7 +229,6 @@ app.get("/api/settings", async (req, res) => {
 
   if (data.includes('idle-time=')) {
     let matches = data.match(/^idle-time=(\d+)$/m);
-    console.log(matches);
     screenTimeout = Number.parseInt(matches[1]);
   }
 
