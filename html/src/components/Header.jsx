@@ -113,7 +113,7 @@ export default function Header({back = false, path = '/', title = '', ssid = nul
 			<Modal
 				isOpen={showQR}
 				onClose={() => setShowQR(false)}
-				title="Scan to Connect"
+				title="Connect"
 			>
 				<div className="flex flex-col items-center gap-3">
 					<img src="/api/connect-qrcode" style={{width: 250, height: 250}}></img>
