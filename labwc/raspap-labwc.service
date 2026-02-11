@@ -1,0 +1,18 @@
+[Unit]
+Description=Kiosk Service for RaspAP Web Display
+After=graphical.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+
+Environment="XDG_SESSION_TYPE=wayland"
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+
+ExecStart=/usr/bin/labwc -d -C /home/pi/raspap_web_display/labwc
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

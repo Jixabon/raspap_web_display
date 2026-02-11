@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Set output mode (check with `wlr-randr` first for exact names/modes)
+# wlr-randr --output DPI-1 --mode 800x480 &
+
+# Background image
+swaybg -i /home/pi/raspap_web_display/labwc/background.png -m fill &
+
+squeekboard &
+
+chromium --app=http://localhost:8085 \
+    --start-maximized \
+    --disable-infobars \
+    --ozone-platform=wayland
