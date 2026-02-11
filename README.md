@@ -75,6 +75,8 @@ cd ~/raspap_web_display
 sudo ./install.sh
 ```
 
+Set your API Key in `.env`
+
 Enable Auto Login
 ```
 sudo raspi-config
