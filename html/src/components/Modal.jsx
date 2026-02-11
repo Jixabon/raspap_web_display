@@ -27,7 +27,7 @@ export default function Modal({ isOpen, onClose = null, title = '', children, sh
                     <button
                         onClick={onClose}
                     >
-                        <i className="fa-solid fa-times"></i>
+                        <i className="fa-solid fa-times text-2xl"></i>
                     </button>
                 )}
             </div>
