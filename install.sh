@@ -7,6 +7,8 @@ curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
 sudo apt update
 sudo apt install \
   labwc \
+  swayidle \
+  wlopm \
   swaybg \
   squeekboard \
   chromium \

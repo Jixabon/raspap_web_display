@@ -1,9 +1,15 @@
 #!/bin/bash
 
-# Set output mode (check with `wlr-randr` first for exact names/modes)
+SCREEN_TIMEOUT=60
+
 # wlr-randr --output DPI-1 --mode 800x480 &
 
-# Background image
+if (( SCREEN_TIMEOUT > 0 )); then
+    swayidle -w \
+        timeout "$SCREEN_TIMEOUT" 'wlopm --off "*"' \
+        resume 'wlopm --on "*"' &
+fi
+
 swaybg -i /home/pi/raspap_web_display/labwc/background.png -m fill &
 
 squeekboard &

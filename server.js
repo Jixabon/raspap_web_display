@@ -223,12 +223,12 @@ app.get("/api/settings", async (req, res) => {
   // Get Screen Timeout
   let screenTimeout = 0;
   const data = await fs.readFile(
-    path.join(__dirname, process.env.WESTON_KIOSK_INI),
+    path.join(__dirname, process.env.LABWC_AUTOSTART),
     'utf8'
   );
 
-  if (data.includes('idle-time=')) {
-    let matches = data.match(/^idle-time=(\d+)$/m);
+  if (data.includes('SCREEN_TIMEOUT=')) {
+    let matches = data.match(/^SCREEN_TIMEOUT=(\d+)$/m);
     screenTimeout = Number.parseInt(matches[1]);
   }
 
@@ -237,6 +237,65 @@ app.get("/api/settings", async (req, res) => {
 	};
   
   res.json(payload);
+});
+
+app.post('/api/screen-timeout/:seconds', async (req, res) => {
+  try {
+    const seconds = parseInt(req.params.seconds);
+
+    if (isNaN(seconds) || seconds < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Seconds must be a valid non-negative number'
+      });
+    }
+
+    const data = await fs.readFile(
+      path.join(__dirname, process.env.LABWC_AUTOSTART),
+      'utf8'
+    );
+
+    let newContent;
+    if (data.includes('SCREEN_TIMEOUT=')) {
+        newContent = data.replace(
+            /^SCREEN_TIMEOUT=\d+$/m,
+            `SCREEN_TIMEOUT=${seconds}`
+        );
+    }
+
+    // 3. Write updated config
+    await fs.writeFile(
+      path.join(__dirname, process.env.LABWC_AUTOSTART),
+      newContent,
+      'utf8'
+    );
+
+    // Restart Service
+    try {
+        const {stdout, stderr} = await exec('sudo systemctl restart raspap-labwc.service');
+
+        if (stderr) {
+          console.error(stderr);
+        }
+    } catch (e) {
+        console.error('Failed to restart raspap-labwc.service:', e);
+    }
+
+    res.json({
+        success: true,
+        message: `Screen timeout set to ${seconds} seconds`,
+        newValue: seconds
+    });
+
+  } catch (error) {
+    console.error('Error updating screen timeout:', error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update screen timeout',
+      error: error.message
+    });
+  }
 });
 
 app.get('/api/connect-qrcode', async (req, res) => {
@@ -288,82 +347,6 @@ app.get('/api/hostname-qrcode', async (req, res) => {
       res.sendFile(path.join(__dirname, 'hostname-qrcode.svg'));
     }
   );
-});
-
-app.post('/api/screen-timeout/:seconds', async (req, res) => {
-  try {
-    const seconds = parseInt(req.params.seconds, 0);
-
-    // Basic validation
-    if (isNaN(seconds) || seconds < 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Seconds must be a valid non-negative number'
-      });
-    }
-
-    // 1. Read current config
-    const data = await fs.readFile(
-      path.join(__dirname, process.env.WESTON_KIOSK_INI),
-      'utf8'
-    );
-
-    // 2. Update or add idle-time
-    let newContent;
-
-    if (data.includes('idle-time=')) {
-        // Replace existing idle-time line
-        newContent = data.replace(
-            /^idle-time=\d+$/m,
-            `idle-time=${seconds}`
-        );
-    } else {
-        // Add idle-time to [shell] section (most common place)
-        // This is a simple but quite reliable approach
-        if (data.includes('[shell]')) {
-            newContent = data.replace(
-                /(\[shell\]\n)/,
-                `$1idle-time=${seconds}\n`
-            );
-        } else {
-            // If [shell] section doesn't exist → append at the end
-            newContent = data + `\n[shell]\nidle-time=${seconds}\n`;
-        }
-    }
-
-    // 3. Write updated config
-    await fs.writeFile(
-      path.join(__dirname, process.env.WESTON_KIOSK_INI),
-      newContent,
-      'utf8'
-    );
-
-    // Restart Service
-    try {
-        const {stdout, stderr} = await exec('sudo systemctl restart weston.service');
-
-        if (stderr) {
-          console.error(stderr);
-        }
-    } catch (e) {
-        console.error('Failed to restart weston.service:', e);
-    }
-
-    res.json({
-        success: true,
-        message: `Screen timeout set to ${seconds} seconds`,
-        newValue: seconds
-    });
-
-  } catch (error) {
-    console.error('Error updating weston idle-time:', error);
-
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update screen timeout',
-      error: error.message
-    });
-  }
 });
 
 app.post("/api/shutdown", async (req, res) => {
