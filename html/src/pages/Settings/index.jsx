@@ -193,10 +193,32 @@ export function Settings() {
 
                 <h2 className="font-bold text-2xl mb-2">Screen Timeout</h2>
                 <div className="flex items-center gap-3 mb-8">
-                    <input type="number" className="border rounded-lg px-4 py-2"
-                        min="0" max="1000" value={screenTimeout} onChange={(e) => setScreenTimeout(e.target.value)}></input>
-                    <span>Seconds</span>
-                    <Button className="px-4 py-2 text-white" onClick={() => setShowTimeoutModal(true)}>Set</Button>
+                    <div className="bg-teal rounded-lg border-2 border-teal">
+                        <button
+                            className="px-3"
+                            onClick={() => setScreenTimeout(screenTimeout - 1)}
+                            disabled={screenTimeout <= 0}
+                        >
+                            <i className="fa-solid fa-minus text-white"></i>
+                        </button>
+                        <input
+                            type="number"
+                            className="bg-white dark:bg-dark-blue text-lg rounded-lg px-4 py-2 outline-none"
+                            min="0"
+                            max="1000"
+                            value={screenTimeout}
+                            onChange={(e) => setScreenTimeout(e.target.value)}
+                        ></input>
+                        <button
+                            className="px-3"
+                            onClick={() => setScreenTimeout(screenTimeout + 1)}
+                            disabled={screenTimeout >= 1000}
+                        >
+                            <i className="fa-solid fa-plus text-white"></i>
+                        </button>
+                    </div>
+                    <span className="text-lg">Seconds</span>
+                    <Button className="px-4 py-2 text-white text-lg" onClick={() => setShowTimeoutModal(true)}>Set</Button>
                 </div>
                 <Modal
                     isOpen={showTimeoutModal}
