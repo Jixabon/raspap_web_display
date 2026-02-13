@@ -33,5 +33,4 @@ node_modules/
 *.sw?
 
 # generated QR codes
-connect-qrcode.svg
-hostname-qrcode.svg
+*-qrcode.svg
