@@ -10,6 +10,7 @@ import child_process from 'child_process';
 import qrcode from 'qrcode';
 
 import * as fallbacks from './fallbacks.js';
+import { cleanOutput, versionCompare } from './utils.js';
 
 const exec = util.promisify(child_process.exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -31,7 +32,7 @@ async function fetch_api(path, method = 'GET') {
       method: method,
       headers: {
           "accept": "application/json",
-          "access_token": `${process.env.RASPAP_API_KEY}`
+          "access_token": `${process.env.RASPAP_API_KEY || 'insecure'}`
       }
   });
 
@@ -46,7 +47,8 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
   }
   if (endpoints.includes('ap')) {
     const res_ap = await fetch_api('/ap');
-    ENDPOINT_CACHE.ap = await res_ap.json();
+    let ap_json = await res_ap.json();
+    ENDPOINT_CACHE.ap = ap_json;
   }
   if (endpoints.includes('clients')) {
     const res_clients = await fetch_api(`/clients/${clientsInterface}`);
@@ -263,7 +265,6 @@ app.post('/api/screen-timeout/:seconds', async (req, res) => {
         );
     }
 
-    // 3. Write updated config
     await fs.writeFile(
       path.join(__dirname, process.env.LABWC_AUTOSTART),
       newContent,
@@ -347,6 +348,59 @@ app.get('/api/hostname-qrcode', async (req, res) => {
       res.sendFile(path.join(__dirname, 'hostname-qrcode.svg'));
     }
   );
+});
+
+app.get('/api/ap-ip-qrcode', async (req, res) => {
+  await refreshCache(['networking', 'ap']);
+
+  qrcode.toFile(
+    path.join(__dirname, 'ap-ip-qrcode.svg'),
+    `http://${ENDPOINT_CACHE.networking.interfaces[ENDPOINT_CACHE.ap.interface]?.IP_address}`,
+    {
+      type: 'svg',
+      margin: 1
+    },
+    (err) => {
+      if (err) {
+        console.error(err);
+        res.statusCode(500).json(err);
+        return;
+      }
+
+      res.sendFile(path.join(__dirname, 'ap-ip-qrcode.svg'));
+    }
+  );
+});
+
+app.get('/api/update-available', async (req, res) => {
+  const {stdout, stderr} = await exec('git fetch --quiet 2>/dev/null && [ $(git rev-list --count HEAD..@{u} 2>/dev/null || echo 0) -gt 0 ] && echo "true" || echo "false"');
+
+  if (stderr) {
+    console.error(stderr);
+    res.statusCode(500).json(stderr);
+    return;
+  }
+
+  res.json(cleanOutput(stdout));
+});
+
+app.get('/api/raspap-update', async (req, res) => {
+  const {stdout, stderr} = await exec("curl -s https://api.github.com/repos/raspap/raspap-webgui/releases/latest | grep '\"tag_name\":' | sed -E 's/.*\"([^\"]+)\".*/\\1/'");
+
+  if (stderr) {
+    console.error(stderr);
+    res.statusCode(500).json(stderr);
+    return;
+  }
+
+  let hasUpdate = versionCompare(ENDPOINT_CACHE.system.raspapVersion, stdout);
+  console.log(hasUpdate);
+
+  res.json(`${hasUpdate}`);
+});
+
+app.post("/api/update", async (req, res) => {
+  await exec('./update.sh')
 });
 
 app.post("/api/shutdown", async (req, res) => {
