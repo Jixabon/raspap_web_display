@@ -12,6 +12,9 @@ export function System() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const [displayUpdate, setDisplayUpdate] = useState(false);
+    const [raspAPUpdate, setRaspAPUpdate] = useState(false);
+
     const default_data = {
         hostname: "raspap",
         uptime: "up 2 days, 4 hours, 31 minutes",
@@ -68,7 +71,50 @@ export function System() {
 		}
 	}, [pollingInterval]);
 
+    useEffect(() => {
+		const fetchUpdates = async () => {
+
+			let hasDisplayUpdate = false;
+			try {
+				const response = await fetch('/api/update-available');
+				if (!response.ok) {
+					throw new Error('Network response was not ok');
+				}
+				const jsonData = await response.json();
+				hasDisplayUpdate = jsonData === 'true' ? true : false;
+			} catch (e) {
+				console.error(e);
+			}
+
+			let hasRaspAPUpdate = false;
+			try {
+				const response = await fetch('/api/raspap-update');
+				if (!response.ok) {
+					throw new Error('Network response was not ok');
+				}
+				const jsonData = await response.json();
+				hasRaspAPUpdate = jsonData === 'true' ? true : false;
+			} catch (e) {
+				console.error(e);
+			}
+
+			setDisplayUpdate(hasDisplayUpdate);
+            setRaspAPUpdate(hasRaspAPUpdate);
+		}
+
+		fetchUpdates();
+	}, []);
+
     console.log(data, isLoading, error);
+
+    async function postUpdateNow() {
+        await fetch(
+            `/api/update`,
+            {
+                method: 'POST'
+            }
+        );
+    }
 
     if (isLoading) {
         return <Overlay show={true}>
@@ -88,6 +134,17 @@ export function System() {
                     <span className="text-4xl font-bold text-teal">RaspAP</span>
                     <span>v{data.raspapVersion}</span>
                 </div>
+                {raspAPUpdate && (
+                    <div className="text-center bg-teal/50 border-4 border-teal rounded-lg p-4 mb-3">
+                        <span>RaspAP update is available</span>
+                    </div>
+                )}
+                {displayUpdate && (
+                    <div className="flex items-center justify-between bg-yellow-300/50 border-4 border-yellow-300 rounded-lg p-4 mb-3">
+                        <span>RaspAP Web Display update is available</span>
+                        <button className="bg-teal rounded-lg py-2 px-3" onClick={() => postUpdateNow()}>Update</button>
+                    </div>
+                )}
                 <div className="grid grid-cols-[min-content_1fr] gap-y-2 mb-8">
                     <span className="font-bold whitespace-nowrap pr-6">Hardware</span>
                     <span>{data.rpiRevision}</span>
