@@ -2,12 +2,7 @@ import util from 'node:util';
 import child_process from 'child_process';
 const exec = util.promisify(child_process.exec);
 
-export function cleanOutput(string) {
-    string = string.replace(/[\n\r]/g, '');
-    string = string.trim();
-
-    return string;
-}
+import { cleanOutput } from './utils.js'
 
 // System
 export async function getRaspAPVersion() {
@@ -22,14 +17,14 @@ export async function getRaspAPVersion() {
 }
 
 export async function getUsedDisk() {
-    const {stdout, stderr} = await exec("df -h / | awk 'NR==2 {print $5}'");
+    const {stdout, stderr} = await exec("df -h / | awk 'NR==2 {print $5}' | sed 's/%$//'");
     
     if (stderr) {
         console.error(stderr);
         return;
     }
 
-    return Number.parseInt(stdout.trim().replace('%', ''));
+    return cleanOutput(stdout);
 }
 
 // AP
