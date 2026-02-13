@@ -2,12 +2,17 @@
 
 SCREEN_TIMEOUT=60
 
+exec 1> ~/labwc-autostart.log 2>&1
+
 # wlr-randr --output DPI-1 --mode 800x480 &
 
-if (( SCREEN_TIMEOUT > 0 )); then
+if [ "$SCREEN_TIMEOUT" -gt 0 ]; then
+    echo "enabling screen timeout of ${SCREEN_TIMEOUT}"
     swayidle -w \
         timeout "$SCREEN_TIMEOUT" 'wlopm --off "*"' \
         resume 'wlopm --on "*"' &
+else
+    echo "SCREEN_TIMEOUT ≤ 0 → skipping swayidle"
 fi
 
 swaybg -i /home/pi/raspap_web_display/labwc/background.png -m fill &
