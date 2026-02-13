@@ -72,15 +72,6 @@ export function Settings() {
 
     console.log(data, isLoading, error);
 
-    if (isLoading) {
-        return <Overlay show={true}>
-            <div className="flex flex-col items-center gap-6">
-                <RaspAPLogo style={{width: 150, height: 150}} animate={true}/>
-                <span className="text-3xl font-bold">Loading...</span>
-            </div>
-        </Overlay>
-    }
-
     function setTheme(mode) {
         setCurrentTheme(mode);
         switch (mode) {
@@ -108,6 +99,15 @@ export function Settings() {
                 method: 'POST'
             }
         );
+    }
+
+    if (isLoading) {
+        return <Overlay show={true}>
+            <div className="flex flex-col items-center gap-6">
+                <RaspAPLogo style={{width: 150, height: 150}} animate={true}/>
+                <span className="text-3xl font-bold">Loading...</span>
+            </div>
+        </Overlay>
     }
 
     return (
