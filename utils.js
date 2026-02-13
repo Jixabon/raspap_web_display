@@ -6,7 +6,6 @@ export function cleanOutput(string) {
 }
 
 export function versionCompare(currentVersion, latestVersion) {
-    console.log(currentVersion, latestVersion);
     const currentParts = currentVersion.split(/[\.\-\+]/).map(part => part.trim());
     const latestParts  = latestVersion.split(/[\.\-\+]/).map(part => part.trim());
 
@@ -14,7 +13,6 @@ export function versionCompare(currentVersion, latestVersion) {
     for (let i = 0; i < Math.max(currentParts.length, latestParts.length); i++) {
       const c = parseInt(currentParts[i] || '0', 10);
       const l = parseInt(latestParts[i] || '0', 10);
-      console.log(c, l);
 
       // If we can't parse → treat as string comparison from this point
       if (isNaN(c) || isNaN(l)) {

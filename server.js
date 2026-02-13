@@ -394,7 +394,6 @@ app.get('/api/raspap-update', async (req, res) => {
   }
 
   let hasUpdate = versionCompare(ENDPOINT_CACHE.system.raspapVersion, stdout);
-  console.log(hasUpdate);
 
   res.json(`${hasUpdate}`);
 });
