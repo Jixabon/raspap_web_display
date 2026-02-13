@@ -9,13 +9,17 @@ import Overlay from '../../components/Overlay';
 import Button from "../../components/Button";
 import RaspAPLogo from "../../components/RaspAPLogo";
 import { LONG_POLLING_INTERVAL } from "../../config";
+import Toggle from "../../components/Toggle";
 
 export function Dashboard() {
 	const [data, setData] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState(null);
 
+	const [hasUpdates, setHasUpdates] = useState(false);
+
 	const [showAdminQR, setShowAdminQR] = useState(false);
+	const [adminQRToggle, setAdminQRToggle] = useState(false);
 
 	const default_data = {
 		connection: {
@@ -80,6 +84,39 @@ export function Dashboard() {
 		}
 	}, [pollingInterval]);
 
+	useEffect(() => {
+		const fetchUpdates = async () => {
+
+			let hasDisplayUpdate = false;
+			try {
+				const response = await fetch('/api/update-available');
+				if (!response.ok) {
+					throw new Error('Network response was not ok');
+				}
+				const jsonData = await response.json();
+				hasDisplayUpdate = jsonData === 'true' ? true : false;
+			} catch (e) {
+				console.error(e);
+			}
+
+			let hasRaspAPUpdate = false;
+			try {
+				const response = await fetch('/api/raspap-update');
+				if (!response.ok) {
+					throw new Error('Network response was not ok');
+				}
+				const jsonData = await response.json();
+				hasRaspAPUpdate = jsonData === 'true' ? true : false;
+			} catch (e) {
+				console.error(e);
+			}
+
+			setHasUpdates(hasDisplayUpdate || hasRaspAPUpdate);
+		}
+
+		fetchUpdates();
+	}, []);
+
 	console.log(data, isLoading, error);
 
 	const connectionTypeIcons = {
@@ -101,10 +138,17 @@ export function Dashboard() {
 			<Modal
 				isOpen={showAdminQR}
 				onClose={() => setShowAdminQR(false)}
-				title="Scan for Admin"
+				title="Admin Panel"
 			>
 				<div className="flex flex-col items-center gap-3">
-					<img src="/api/hostname-qrcode" style={{width: 250, height: 250}}></img>
+					<img src={adminQRToggle ? '/api/hostname-qrcode' : '/api/ap-ip-qrcode'} style={{width: 250, height: 250}}></img>
+					<span>How would you like to connect?</span>
+					<Toggle
+						value={adminQRToggle}
+						trueLabel="WAN"
+						falseLabel="LAN"
+						onChange={(x) => setAdminQRToggle(x)}
+						/>
 				</div>
 			</Modal>
 			<main className="flex flex-col h-full">
@@ -121,8 +165,12 @@ export function Dashboard() {
 						<div className="flex flex-col justify-center items-center">
 							<span><i className="fa-solid fa-server text-4xl mb-4"></i></span>
 							<span>{data.revision}</span>
-							<span className="text-teal text-underline"
-								onClick={() => setShowAdminQR(true)}>{data.hostname}.local</span>
+							<span>{data.hostname}</span>
+							<button className="text-teal text-underline"
+								onClick={() => setShowAdminQR(true)}
+							>
+								Admin Panel
+							</button>
 						</div>
 						<div className="self-start flex flex-col justify-center items-end">
 							<div className="flex flex-col items-center mb-3">
@@ -168,7 +216,7 @@ export function Dashboard() {
 					<a href="/vpn"><DashboardButton icon="fa-shield-halved" text="VPN (WIP)" /></a>
 					<a href="/firewall"><DashboardButton icon="fa-fire-flame-curved" text="Firewall (WIP)" /></a>
 					<a href="/settings"><DashboardButton icon="fa-cog" text="Settings" /></a>
-					<a href="/system"><DashboardButton icon="fa-circle-info" text="System" /></a>
+					<a href="/system"><DashboardButton icon="fa-circle-info" text="System" showNotif={hasUpdates} /></a>
 				</div>
 			</main>
 			<Footer version={data.version} uptime={data.uptime} />
@@ -176,10 +224,18 @@ export function Dashboard() {
 	);
 }
 
-function DashboardButton({icon, text}) {
+function DashboardButton({icon, text, showNotif = false}) {
 	return (
 		<Button className="w-full py-6 flex flex-col items-center gap-2 text-white">
-			<i className={`fa-solid ${icon} text-3xl`}></i>
+			<div className="relative">
+				<i className={`fa-solid ${icon} text-3xl`}></i>
+				{showNotif && (
+					<span class="absolute top-0 right-0 flex size-3">
+						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-80"></span>
+						<span class="relative inline-flex size-3 rounded-full bg-red-700"></span>
+					</span>
+				)}
+			</div>
 			<span className="font-bold">{text}</span>
 		</Button>
 	)
