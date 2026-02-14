@@ -11,6 +11,13 @@ import RaspAPLogo from "../../components/RaspAPLogo";
 import { LONG_POLLING_INTERVAL } from "../../config";
 import Toggle from "../../components/Toggle";
 
+export const connectionTypeIcons = {
+	'ethernet': 'fa-ethernet',
+	'wireless': 'fa-wifi',
+	'tethering': 'fa-mobile-screen-button',
+	'cellular': 'fa-tower-cell'
+};
+
 export function Dashboard() {
 	const [data, setData] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
@@ -119,10 +126,6 @@ export function Dashboard() {
 
 	console.log(data, isLoading, error);
 
-	const connectionTypeIcons = {
-		'ethernet': 'fa-ethernet',
-	};
-
 	if (isLoading) {
 		return <Overlay show={true}>
 			<div className="flex flex-col items-center gap-6">
@@ -135,22 +138,6 @@ export function Dashboard() {
 	return (
 		<>
 			<Header ssid={data.host.ssid} passphrase={data.host.passphrase} />
-			<Modal
-				isOpen={showAdminQR}
-				onClose={() => setShowAdminQR(false)}
-				title="Admin Panel"
-			>
-				<div className="flex flex-col items-center gap-3">
-					<img src={adminQRToggle ? '/api/hostname-qrcode' : '/api/ap-ip-qrcode'} style={{width: 250, height: 250}}></img>
-					<span>How would you like to connect?</span>
-					<Toggle
-						value={adminQRToggle}
-						trueLabel="WAN"
-						falseLabel="LAN"
-						onChange={(x) => setAdminQRToggle(x)}
-						/>
-				</div>
-			</Modal>
 			<main className="flex flex-col h-full">
 				<div className="flex-grow flex items-center">
 					<div className="w-full grid grid-cols-3">
@@ -171,6 +158,22 @@ export function Dashboard() {
 							>
 								Admin Panel
 							</button>
+							<Modal
+								isOpen={showAdminQR}
+								onClose={() => setShowAdminQR(false)}
+								title="Admin Panel"
+							>
+								<div className="flex flex-col items-center gap-3">
+									<img src={adminQRToggle ? '/api/hostname-qrcode' : '/api/ap-ip-qrcode'} style={{width: 250, height: 250}}></img>
+									<span>How would you like to connect?</span>
+									<Toggle
+										value={adminQRToggle}
+										trueLabel="WAN"
+										falseLabel="LAN"
+										onChange={(x) => setAdminQRToggle(x)}
+										/>
+								</div>
+							</Modal>
 						</div>
 						<div className="self-start flex flex-col justify-center items-end">
 							<div className="flex flex-col items-center mb-3">
