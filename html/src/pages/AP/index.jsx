@@ -72,6 +72,10 @@ export function AP() {
         }
     }, [pollingInterval]);
 
+    let wirelessClients = (data?.clients || []).filter((c) => c.connection_type === 'wireless');
+    let ethernetClients = (data?.clients || []).filter((c) => c.connection_type === 'ethernet');
+    let unknownClients = (data?.clients || []).filter((c) => c.connection_type === 'unknown');
+
     console.log(data, isLoading, error);
 
     if (isLoading) {
@@ -154,28 +158,38 @@ export function AP() {
 
                 <h3 className="font-bold text-2xl mb-2">Wireless ({data.wireless_clients_count || 0})</h3>
                 <div className="border rounded-2xl mb-3">
-                    {!data.clients || data.clients?.length === 0 ? (
-                        <span>There are currently no clients</span>
+                    {!wirelessClients || wirelessClients.length === 0 ? (
+                        <span className="inline-block w-full text-center p-3">There are currently no wireless clients</span>
                     ) : (
                         <>
-                            {data.clients?.map((client) => (
+                            {wirelessClients.map((client) => (
                                 <ClientLine client={client}/>
                             ))}
                         </>
                     )}
                 </div>
                 <h3 className="font-bold text-2xl mb-2">Ethernet ({data.ethernet_clients_count || 0})</h3>
-                {/* <div className="border rounded-2xl mb-3">
-                    {!data.clients || data.clients?.length === 0 ? (
-                        <span>There are currently no clients</span>
+                <div className="border rounded-2xl mb-3">
+                    {!ethernetClients || ethernetClients.length === 0 ? (
+                        <span className="inline-block w-full text-center p-3">There are currently no ethernet clients</span>
                     ) : (
                         <>
-                            {data.clients?.map((client) => (
+                            {ethernetClients.map((client) => (
                                 <ClientLine client={client}/>
                             ))}
                         </>
                     )}
-                </div> */}
+                </div>
+                {unknownClients.length > 0 && (
+                    <>
+                        <h3 className="font-bold text-2xl mb-2">Unknown</h3>
+                        <div className="border rounded-2xl mb-3">
+                            {unknownClients.map((client) => (
+                                <ClientLine client={client}/>
+                            ))}
+                        </div>
+                    </>  
+                )}
             </main>
             <Footer />
         </>
