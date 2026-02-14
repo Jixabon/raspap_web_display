@@ -6,6 +6,7 @@ import Overlay from '../../components/Overlay';
 import RaspAPLogo from "../../components/RaspAPLogo";
 import { SHORT_POLLING_INTERVAL } from "../../config";
 import Metric from "../../components/Metric";
+import Accordion from "../../components/Accordion";
 
 export function System() {
     const [data, setData] = useState(null);
@@ -14,6 +15,7 @@ export function System() {
 
     const [displayUpdate, setDisplayUpdate] = useState(false);
     const [raspAPUpdate, setRaspAPUpdate] = useState(false);
+    const [showUpdatingOverlay, setShowUpdatingOverlay] = useState(false);
 
     const default_data = {
         hostname: "raspap",
@@ -108,12 +110,22 @@ export function System() {
     console.log(data, isLoading, error);
 
     async function postUpdateNow() {
-        await fetch(
+        setShowUpdatingOverlay(true);
+
+        const response = await fetch(
             `/api/update`,
             {
                 method: 'POST'
             }
         );
+
+        if (response.status !== 200) {
+            let json = await response.json();
+            console.log(json);
+            setShowUpdatingOverlay(false);
+            // TODO show message about failure
+            return;
+        }
     }
 
     if (isLoading) {
@@ -173,11 +185,7 @@ export function System() {
                     <Metric value={data.systemTemperature} suffix="C" className="mb-3"/>
                 </div>
                 <div>
-                    <details className="border rounded">
-                        <summary className="flex justify-between items-center rounded px-4 py-2 text-2xl">
-                            <span>Interfaces ({Object.keys(data?.interfaces).length})</span>
-                            <span><i className="fa-solid fa-plus"></i></span>
-                        </summary>
+                    <Accordion label={`Interfaces (${Object.keys(data?.interfaces).length})`}>
                         {Object.entries(data?.interfaces).map(([key, item]) => {
                             return (
                                 <div className="mt-5 px-4 last:mb-5">
@@ -193,8 +201,14 @@ export function System() {
                                 </div>
                             );
                         })}
-                    </details>
+                    </Accordion>
                 </div>
+
+                <Overlay show={showUpdatingOverlay}>
+                    <span className="font-bold text-4xl">
+                        Updating...
+                    </span>
+                </Overlay>
             </main>
             <Footer />
         </>
