@@ -72,22 +72,147 @@ export async function getWPAPassphrase() {
     return cleanOutput(stdout);
 }
 
-export async function getWirelessClients(intrfc) {
+// Clients
+async function getWirelessClientsMac(intrfc) {
     const {stdout, stderr} = await exec(`iw dev ${intrfc} station dump`);
     
     if (stderr) {
         console.error(stderr);
-        return;
+        return [];
     }
 
-    const lines = stdout.split(/\r?\n/);
+    // Match lines that start with "Station " followed by a MAC address
+    const macRegex = /^Station\s+([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})/gm;
+    
+    const macAddresses = [];
+    let match;
+    
+    while ((match = macRegex.exec(stdout)) !== null) {
+        let mac = match[1];
+        macAddresses.push(mac.toUpperCase());
+    }
 
-    // enumerate 'station' entries (each represents a wireless client)
-    let clientCount = lines.reduce((clientCount, line) => {
-        if (line.indexOf('Station', 0) > -1) {
-            return clientCount + 1;
+    return macAddresses;
+}
+
+export async function getWirelessClientsAmount() {
+    let apInterface = await getAPInterface();
+    let wirelessMacs = await getWirelessClientsMac(apInterface);
+
+    return (wirelessMacs || []).length;
+}
+
+async function getEthernetClientsMac() {
+    const arpRes = await exec(`ip neigh show`);
+    
+    if (arpRes.stderr) {
+        console.error(arpRes.stderr);
+        return [];
+    }
+    
+    const arpRegex = /^(\S+)\s+dev\s+(eth[0-9]+|en\w+)\s+lladdr\s+(\S+)\s+(REACHABLE|DELAY|PROBE)/gm;
+    
+    let arpMacs = [];
+    let match;
+    
+    while ((match = arpRegex.exec(arpRes.stdout)) !== null) {
+        let mac = match[1];
+        arpMacs.push(mac.toUpperCase());
+    }
+
+    const leasesRes = await exec(`cat ${process.env.RASPI_DNSMASQ_LEASES}`);
+
+    if (leasesRes.stderr) {
+        console.error(leasesRes.stderr);
+        return [];
+    }
+
+    let leaseMacs = [];
+    const leasesLines = leasesRes.stdout.split(/\r?\n/);
+
+    for (const line of leasesLines) {
+        if (!line || line.split()[0] === '#') continue;
+
+        let fields = line.split(' ');
+        if (fields.length >= 3) {
+            let mac = fields[1];
+            leaseMacs.push(mac.toUpperCase());
         }
-        return clientCount;
-    }, 0);
-    return clientCount;
+    }
+
+    let activeEthernetMacs = [];
+    for (const mac of arpMacs) {
+        if (leaseMacs.includes(mac) && !activeEthernetMacs.includes(mac)) {
+            activeEthernetMacs.push(mac);
+        }
+    }
+
+    return activeEthernetMacs;
+}
+
+export async function getEthernetClientsAmount() {
+    let ethernetMacs = await getEthernetClientsMac();
+
+    return (ethernetMacs || []).length;
+}
+
+export async function getActiveClients() {
+    let apInterface = await getAPInterface();
+    let wirelessMacs = await getWirelessClientsMac(apInterface);
+    let ethernetMacs = await getEthernetClientsMac();
+
+    const arpRes = await exec(`arp -i ${apInterface}`);
+
+     if (arpRes.stderr) {
+        console.error(arpRes.stderr);
+        return [];
+    }
+
+    const arpLines = arpRes.stdout.split(/\r?\n/);
+    arpLines.shift(); // remove header line
+
+    let arpMacAddresses = arpLines.reduce((arpMacAddress, line) => {
+        let parts = line.split(/\s+/);
+        if (parts.length > 3) {
+            arpMacAddress.push(parts[2]);
+        }
+
+        return arpMacAddress;
+    }, []);
+
+    const leasesRes = await exec(`cat ${process.env.RASPI_DNSMASQ_LEASES}`);
+
+    if (leasesRes.stderr) {
+        console.error(leasesRes.stderr);
+        return [];
+    }
+
+    const leasesLines = leasesRes.stdout.split(/\r?\n/);
+
+    let activeClients = [];
+
+    for (const line of leasesLines) {
+        let fields = line.split(' ');
+        if (fields.length >= 3) {
+            let macAddress = fields[1];
+
+            if (arpMacAddresses.includes(macAddress)) {
+                let normalizedMac = macAddress.toUpperCase();
+                let isWireless = wirelessMacs.includes(normalizedMac);
+                let isEthernet = ethernetMacs.includes(normalizedMac);
+
+                let clientData = {
+                    "timestamp": parseInt(fields[0]),
+                    "mac_address": fields[1],
+                    "ip_address": fields[2],
+                    "hostname": fields[3],
+                    "client_id": fields[4],
+                    "connection_type": isWireless ? 'wireless' : isEthernet ? 'ethernet' : 'unknown'
+                }
+                activeClients.push(clientData);
+            }
+        }
+    }
+
+    return activeClients;
 }

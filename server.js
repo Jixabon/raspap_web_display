@@ -40,51 +40,54 @@ async function fetch_api(path, method = 'GET') {
 }
 
 async function refreshCache(endpoints, clientsInterface = 'wlan0') {
+  // Get API version to know what datapoints need to use fallbacks
+  let raspap_version = await fallbacks.getRaspAPVersion();
+
   // @TODO add catches
   if (endpoints.includes('system')) {
     const res_system = await fetch_api('/system');
     ENDPOINT_CACHE.system = await res_system.json();
+
+    if (versionCompare(raspap_version, '3.5.2') < 1) {
+      ENDPOINT_CACHE.system.raspapVersion = raspap_version;
+      ENDPOINT_CACHE.system.usedDisk = await fallbacks.getUsedDisk();
+    }
   }
+
   if (endpoints.includes('ap')) {
     const res_ap = await fetch_api('/ap');
     let ap_json = await res_ap.json();
     ENDPOINT_CACHE.ap = ap_json;
-  }
-  if (endpoints.includes('clients')) {
-    const res_clients = await fetch_api(`/clients/${clientsInterface}`);
-    ENDPOINT_CACHE.clients[clientsInterface] = await res_clients.json();
-  }
-  if (endpoints.includes('dhcp')) {
-    const res_dhcp = await fetch_api('/dhcp');
-    ENDPOINT_CACHE.dhcp = await res_dhcp.json();
-  }
-  if (endpoints.includes('networking')) {
-    const res_networking = await fetch_api('/networking');
-    ENDPOINT_CACHE.networking = await res_networking.json();
-  }
 
-  // Get API version to know what datapoints need to use fallbacks
-  let raspap_version = await fallbacks.getRaspAPVersion();
-
-  // API version fallbacks
-  if (versionCompare(raspap_version, '3.5.2') < 1) {
-    if (endpoints.includes('system')) {
-      ENDPOINT_CACHE.system.raspapVersion = await fallbacks.getRaspAPVersion();
-      ENDPOINT_CACHE.system.usedDisk = await fallbacks.getUsedDisk();
-    }
-
-    if (endpoints.includes('ap')) {
+    if (versionCompare(raspap_version, '3.5.2') < 1) {
       ENDPOINT_CACHE.ap.interface = await fallbacks.getAPInterface();
       ENDPOINT_CACHE.ap.frequency_band = await fallbacks.getFrequencyBand(clientsInterface);
       ENDPOINT_CACHE.ap.wpa_passphrase = await fallbacks.getWPAPassphrase();
     }
+  }
 
-    if (endpoints.includes('clients')) {
-      let wirelessClients = await fallbacks.getWirelessClients(clientsInterface);
-      ENDPOINT_CACHE.clients[clientsInterface].active_wireless_clients = wirelessClients;
-      // ENDPOINT_CACHE.clients[clientsInterface].ethernetClients = await fallbacks.getEthernetClients();
-      ENDPOINT_CACHE.clients[clientsInterface].active_clients_amount = wirelessClients;
+  if (endpoints.includes('clients')) {
+    if (versionCompare(raspap_version, '3.5.2') < 1) {
+      let wirelessClientsAmount = await fallbacks.getWirelessClientsAmount(clientsInterface);
+      let ethernetClientsAmount = await fallbacks.getEthernetClientsAmount();
+      ENDPOINT_CACHE.clients.active_wireless_clients_amount = wirelessClientsAmount;
+      ENDPOINT_CACHE.clients.active_ethernet_clients_amount = ethernetClientsAmount;
+      ENDPOINT_CACHE.clients.active_clients_amount = wirelessClientsAmount + ethernetClientsAmount;
+      ENDPOINT_CACHE.clients.active_clients = await fallbacks.getActiveClients();
+    } else {
+      const res_clients = await fetch_api(`/clients`);
+      ENDPOINT_CACHE.clients = await res_clients.json();
     }
+  }
+
+  if (endpoints.includes('dhcp')) {
+    const res_dhcp = await fetch_api('/dhcp');
+    ENDPOINT_CACHE.dhcp = await res_dhcp.json();
+  }
+
+  if (endpoints.includes('networking')) {
+    const res_networking = await fetch_api('/networking');
+    ENDPOINT_CACHE.networking = await res_networking.json();
   }
 
   // console.log(ENDPOINT_CACHE);
@@ -143,7 +146,7 @@ app.get("/api/dashboard", async (req, res) => {
       passphrase: ENDPOINT_CACHE.ap.wpa_passphrase,
 			interface: ENDPOINT_CACHE.ap.interface,
 			ipv4: ENDPOINT_CACHE.networking.interfaces[ENDPOINT_CACHE.ap.interface]?.IP_address,
-			clients_count: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_clients_amount,
+			clients_count: ENDPOINT_CACHE.clients.active_clients_amount,
       hide_ssid: ENDPOINT_CACHE.ap.ignore_broadcast_ssid == '0' ? false : true
 		},
 
@@ -189,10 +192,10 @@ app.get("/api/ap", async (req, res) => {
       range_gateway: ENDPOINT_CACHE.dhcp.range_gateway,
       range_nameservers: ENDPOINT_CACHE.dhcp.range_nameservers
     },
-    wireless_clients_count: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_wireless_clients,
-    // ethernet_clients_count: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_ethernet_clients,
-    clients_count: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_clients_amount,
-    clients: ENDPOINT_CACHE.clients[ENDPOINT_CACHE.ap.interface].active_clients
+    wireless_clients_count: ENDPOINT_CACHE.clients.active_wireless_clients_amount,
+    ethernet_clients_count: ENDPOINT_CACHE.clients.active_ethernet_clients_amount,
+    clients_count: ENDPOINT_CACHE.clients.active_clients_amount,
+    clients: ENDPOINT_CACHE.clients.active_clients
   };
   
   res.json(payload);
