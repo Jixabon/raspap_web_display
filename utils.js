@@ -5,6 +5,7 @@ export function cleanOutput(string) {
     return string;
 }
 
+// returns 0 for =, 1 for newer and -1 for older
 export function versionCompare(currentVersion, latestVersion) {
     const currentParts = currentVersion.split(/[\.\-\+]/).map(part => part.trim());
     const latestParts  = latestVersion.split(/[\.\-\+]/).map(part => part.trim());
@@ -20,10 +21,10 @@ export function versionCompare(currentVersion, latestVersion) {
         return cmp > 0;
       }
 
-      if (l > c) return true;
-      if (l < c) return false;
+      if (l > c) return -1;
+      if (l < c) return 1;
     }
 
     // versions are equal
-    return false;
+    return 0;
 }

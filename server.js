@@ -67,7 +67,7 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
   let raspap_version = await fallbacks.getRaspAPVersion();
 
   // API version fallbacks
-  if (raspap_version === '3.5.2') {
+  if (versionCompare(raspap_version, '3.5.2') < 1) {
     if (endpoints.includes('system')) {
       ENDPOINT_CACHE.system.raspapVersion = await fallbacks.getRaspAPVersion();
       ENDPOINT_CACHE.system.usedDisk = await fallbacks.getUsedDisk();
@@ -393,13 +393,21 @@ app.get('/api/raspap-update', async (req, res) => {
     return;
   }
 
-  let hasUpdate = versionCompare(ENDPOINT_CACHE.system.raspapVersion, stdout);
+  let hasUpdate = versionCompare(ENDPOINT_CACHE.system.raspapVersion, stdout) == -1;
 
   res.json(`${hasUpdate}`);
 });
 
 app.post("/api/update", async (req, res) => {
-  await exec('./update.sh')
+  const {stdout, stderr} = await exec('sudo ./update.sh');
+  
+  if (stderr) {
+    console.error(stderr);
+    res.statusCode(500).json(stderr);
+    return;
+  }
+
+  res.status(200).json("true");
 });
 
 app.post("/api/shutdown", async (req, res) => {
