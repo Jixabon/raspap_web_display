@@ -15,6 +15,7 @@ Light | Dark
 - Dashboard
     - AP QR Code and Info
     - Power Controls
+    - Admin Panel QR Codes
     - Connection/Hardware/AP/Status Info at a glance
     - Quick Buttons
         - Connection
@@ -36,6 +37,7 @@ Light | Dark
     - Screen Timeout
 - System Info
     - RaspAP Info
+    - Update Alerts
     - System Versions
     - System Metrics
     - Interfaces (Accordion)
@@ -63,7 +65,7 @@ It leverages the REST API included with RaspAP to gather the necessary data. Whi
 ## Setup
 > [I already installed with Weston](FAQ.md#what-to-do-if-i-installed-with-weston)
 
-Start by cloning the repository to your home directory (usually `/home/pi` or `~/`
+Start by cloning the repository to the main user's home directory (usually `/home/pi` or `~/`
 ```
 cd ~/
 git clone https://github.com/Jixabon/raspap_web_display.git
@@ -84,6 +86,14 @@ sudo raspi-config
 - Choose option: 1 System Options
 - Choose option: S6 Auto Login
 - Choose option: Yes/OK/Finish
+
+Reboot the system
+> Note: After you reboot the system it will auto launch the services making it difficult to access the command line. If you need access to the command line it is recommended to enable ssh.
+```
+sudo reboot
+```
+
+From this point RaspAP Web Display will show on boot after some time.
 
 ## Development and Customization
 
