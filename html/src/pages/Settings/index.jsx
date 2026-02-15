@@ -8,6 +8,7 @@ import Modal from "../../components/Modal";
 import Button from "../../components/Button";
 import TimePickerModal from "../../components/TimePicker";
 import { setThemeBySchedule } from "../..";
+import Accordion from "../../components/Accordion";
 
 export function Settings() {
     const [data, setData] = useState(null);
@@ -259,6 +260,8 @@ export function Settings() {
                         </div>
                     </div>
                 </div> */}
+
+                <Accordion label="Advanced"></Accordion>
             </main>
             <Footer />
         </>
