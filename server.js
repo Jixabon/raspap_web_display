@@ -153,11 +153,11 @@ app.get("/api/dashboard", async (req, res) => {
 		statuses: {
 			ap_enabled: true,
 			ap_active: !!ENDPOINT_CACHE.system.hostapdStatus,
-			bridged_enabled: true,
+			bridged_enabled: false,
 			bridged_active: false,
-			ad_block_enabled: true,
-			ad_block_active: true,
-			vpn_enabled: true,
+			ad_block_enabled: false,
+			ad_block_active: false,
+			vpn_enabled: false,
 			vpn_active: false,
 			firewall_enabled: false,
 			firewall_active: false,
@@ -166,6 +166,23 @@ app.get("/api/dashboard", async (req, res) => {
     version: ENDPOINT_CACHE.system.raspapVersion,
 		uptime: ENDPOINT_CACHE.system.uptime,
 	};
+  
+  res.json(payload);
+});
+
+app.get("/api/connection", async (req, res) => {
+  await refreshCache(['networking']);
+
+  let connectionInterface = await getConnectionInterface();
+  let connectionType = getConnectionType(connectionInterface);
+
+  let payload = {
+    connection_type: connectionType,
+    interface: connectionInterface,
+    ipv4: ENDPOINT_CACHE.networking.interfaces[connectionInterface]?.IP_address,
+    connected: [],
+    nearby: [],
+  };
   
   res.json(payload);
 });
