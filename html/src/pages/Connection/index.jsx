@@ -4,9 +4,8 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import Overlay from '../../components/Overlay';
 import RaspAPLogo from "../../components/RaspAPLogo";
+import { connectionTypeIcons } from "../Dashboard";
 import { LONG_POLLING_INTERVAL } from "../../config";
-import Modal from "../../components/Modal";
-import Button from "../../components/Button";
 
 export function Connection() {
     const [data, setData] = useState(null);
@@ -14,31 +13,25 @@ export function Connection() {
     const [error, setError] = useState(null);
 
     const default_data = {
+        connection_type: 'wireless',
         interface: 'wlan0',
-        ssid: 'RaspAP',
-        hide_ssid: false,
-        wpa_key_mgmt: 'WPA-PSK',
-        wpa: '2',
-        passphrase: 'ChangeMe',
-        channel: '1',
-        hw_mode: 'g',
-        frequency_band: '2.4',
-        ipv4: '10.3.141.1',
-        dhcp: {
-            range_start: "10.3.141.50",
-            range_end: "10.3.141.254",
-            range_subnet_mask: "255.255.255.0",
-            range_lease_time: "12h",
-            range_gateway: "10.3.141.1",
-            range_nameservers: [
-                "9.9.9.9",
-                "1.1.1.1"
-            ]
-        },
-        clients_count: 1,
-        wireless_clients_count: 2,
-        ethernet_clients_count: 1,
-        clients: []
+        ipv4: '192.168.1.25',
+        connected: [
+            {
+                ssid: 'HotelInternet',
+                channel: 4,
+                RSSI: '-33',
+                security: 'WPA'
+            }
+        ],
+        nearby: [
+            {
+                ssid: "McDonalds",
+                channel: 4,
+                RSSI: '-70',
+                security: 'WPA/WPA2'
+            }
+        ],
     };
 
     var pollingInterval = null;
@@ -85,12 +78,46 @@ export function Connection() {
             <Header back={true} title="Connection" />
             <main>
                 <div className="flex flex-col items-center mb-6">
-                    <div className="mb-2">
+                    <div className="relative mb-2">
                         <i className="fa-solid fa-globe text-9xl"></i>
+                        <span className="absolute top-1/2 left-1/2 transform -translate-1/2 flex justify-center items-center bg-white rounded-full size-17">
+                            <i className={`fa-solid ${connectionTypeIcons[data.connection_type] || 'fa-circle-question'} text-4xl`}></i>
+                        </span>
                     </div>
+                    <h2 className="font-bold text-2xl capitalize">{data.connection_type}</h2>
+
                 </div>
+
+                <div className="grid grid-cols-[min-content_1fr] gap-y-2 mb-8">
+                    <span className="font-bold whitespace-nowrap pr-6">Interface</span>
+                    <span>{data.interface}</span>
+                    <span className="font-bold whitespace-nowrap pr-6">WAN IP</span>
+                    <span>{data.ipv4}</span>
+                </div>
+
+                {data.connection_type === 'wireless' && (
+                    <>
+                        <h2 className="font-bold text-2xl mb-2">Connected</h2>
+
+                        <div>
+                            {data.connected.map((network) => <WiFiCard network={network} />)}
+                        </div>
+
+                        <h2 className="font-bold text-2xl mb-2">Nearby</h2>
+
+                        <div>
+                            {data.nearby.map((network) => <WiFiCard network={network} />)}
+                        </div>
+                    </>
+                )}
             </main>
             <Footer />
         </>
     );
+}
+
+function WiFiCard({network}) {
+    return (
+        <div>{network.ssid}</div>
+    )
 }
