@@ -216,3 +216,29 @@ export async function getActiveClients() {
 
     return activeClients;
 }
+
+// WiFi Client
+export async function getConnectedWiFiClient(intrfc) {
+    const {stdout, stderr} = await exec(`iw dev ${intrfc} link`);
+    
+    if (stderr) {
+        console.error(stderr);
+        return null;
+    }
+
+    let ssidMatch = stdout.match(/SSID:\s+(.*)/);
+    // let channelMatch = stdout.match(/channel\s+(\d+)/);
+    let rssiMatch = stdout.match(/signal:\s+(-\d+)/);
+    let securityMatch = stdout.match(/RSN:\s+((?:\w+\s*)+)/);
+
+    if (ssidMatch && rssiMatch) {
+        return {
+            ssid: ssidMatch[1].trim(),
+            // channel: parseInt(channelMatch[1]),
+            RSSI: rssiMatch[1].trim(),
+            security: securityMatch ? securityMatch[1].trim() : 'Unknown'
+        };
+    } else {
+        return null;
+    }
+}

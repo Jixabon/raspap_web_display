@@ -22,33 +22,43 @@ var ENDPOINT_CACHE = {
   clients: {},
   dhcp: {},
   networking: {},
+  wifi_client: {},
 };
 
 const app = express();
 app.use(express.json());
 
 async function fetch_api(path, method = 'GET') {
+  let apiKey = process.env.RASPAP_API_KEY;
+
+  if (!apiKey || apiKey === '<API_KEY_HERE>') {
+    apiKey = 'insecure';
+    console.warn('WARNING: Using insecure API key. Set RASPAP_API_KEY environment variable to a random string for better security.');
+  }
+
   const response = await fetch(`${process.env.RASPAP_API_URL}${path}`, {
       method: method,
       headers: {
           "accept": "application/json",
-          "access_token": `${process.env.RASPAP_API_KEY || 'insecure'}`
+          "access_token": apiKey
       }
   });
 
   return response;
 }
 
-async function refreshCache(endpoints, clientsInterface = 'wlan0') {
+async function refreshCache(endpoints) {
   // Get API version to know what datapoints need to use fallbacks
   let raspap_version = await fallbacks.getRaspAPVersion();
+  let version = raspap_version.split(' ')[0];
+  let isInsiders = raspap_version.includes('Insiders');
 
   // @TODO add catches
   if (endpoints.includes('system')) {
     const res_system = await fetch_api('/system');
     ENDPOINT_CACHE.system = await res_system.json();
 
-    if (versionCompare(raspap_version, '3.5.2') < 1) {
+    if (versionCompare(version, '3.5.2') < 1 || (isInsiders && versionCompare(version, '3.5.8') < 1)) {
       ENDPOINT_CACHE.system.raspapVersion = raspap_version;
       ENDPOINT_CACHE.system.usedDisk = await fallbacks.getUsedDisk();
     }
@@ -59,16 +69,16 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
     let ap_json = await res_ap.json();
     ENDPOINT_CACHE.ap = ap_json;
 
-    if (versionCompare(raspap_version, '3.5.2') < 1) {
+    if (versionCompare(version, '3.5.2') < 1 || (isInsiders && versionCompare(version, '3.5.8') < 1)) {
       ENDPOINT_CACHE.ap.interface = await fallbacks.getAPInterface();
-      ENDPOINT_CACHE.ap.frequency_band = await fallbacks.getFrequencyBand(clientsInterface);
+      ENDPOINT_CACHE.ap.frequency_band = await fallbacks.getFrequencyBand(ENDPOINT_CACHE.ap.interface);
       ENDPOINT_CACHE.ap.wpa_passphrase = await fallbacks.getWPAPassphrase();
     }
   }
 
   if (endpoints.includes('clients')) {
-    if (versionCompare(raspap_version, '3.5.2') < 1) {
-      let wirelessClientsAmount = await fallbacks.getWirelessClientsAmount(clientsInterface);
+    if (versionCompare(version, '3.5.2') < 1 || (isInsiders && versionCompare(version, '3.5.8') < 1)) {
+      let wirelessClientsAmount = await fallbacks.getWirelessClientsAmount(ENDPOINT_CACHE.ap.interface);
       let ethernetClientsAmount = await fallbacks.getEthernetClientsAmount();
       ENDPOINT_CACHE.clients.active_wireless_clients_amount = wirelessClientsAmount;
       ENDPOINT_CACHE.clients.active_ethernet_clients_amount = ethernetClientsAmount;
@@ -90,11 +100,23 @@ async function refreshCache(endpoints, clientsInterface = 'wlan0') {
     ENDPOINT_CACHE.networking = await res_networking.json();
   }
 
+  if (endpoints.includes('connection')) {
+    if (versionCompare(version, '3.5.2') < 1 || (isInsiders && versionCompare(version, '3.5.8') < 1)) {
+      let connectionInterface = await getConnectionInterface();
+      ENDPOINT_CACHE.wifi_client.connected = await fallbacks.getConnectedWiFiClient(connectionInterface);
+      ENDPOINT_CACHE.wifi_client.known = [];
+      ENDPOINT_CACHE.wifi_client.nearby = [];
+    } else {
+      // const res_wifi_client = await fetch_api(`/wifi-client`);
+      // ENDPOINT_CACHE.wifi_client = await res_wifi_client.json();
+    }
+  }
+
   // console.log(ENDPOINT_CACHE);
 }
 
 async function getConnectionInterface() {
-  const { stdout, stderr } = await exec("ip route show default | awk 'NR==1 {print $5}'");
+  const { stdout, stderr } = await exec("ip -o route get 1.1.1.1 | awk 'NR==1 {print $5}'");
     let intrfc = stdout.trim();
 
     if (intrfc == "" || stderr) {
@@ -126,18 +148,19 @@ function getConnectionType(intrfc) {
 }
 
 app.get("/api/dashboard", async (req, res) => {
-  let clientsInterface = ENDPOINT_CACHE.ap.interface || 'wlan0';
-  await refreshCache(['system', 'ap', 'clients', 'networking'], clientsInterface);
+  await refreshCache(['system', 'ap', 'clients', 'networking', 'connection']);
 
   let connectionInterface = await getConnectionInterface();
   let connectionType = getConnectionType(connectionInterface);
 
   let payload = {
 		connection: {
-			type: connectionType,
-			ssid: connectionType == 'wireless' ? 'ssid' : null,
 			interface: connectionInterface,
-			ipv4: ENDPOINT_CACHE.networking.interfaces[connectionInterface]?.IP_address,
+			type: connectionType,
+			ssid: connectionType === 'wireless' ? ENDPOINT_CACHE.wifi_client.connected?.ssid : null,
+			ipv4: ENDPOINT_CACHE.networking.interfaces[connectionInterface]?.IP_address
+        ? ENDPOINT_CACHE.networking.interfaces[connectionInterface]?.IP_address
+        : null,
 		},
 		revision: ENDPOINT_CACHE.system.rpiRevision,
 		hostname: ENDPOINT_CACHE.system.hostname,
@@ -145,7 +168,9 @@ app.get("/api/dashboard", async (req, res) => {
 			ssid: ENDPOINT_CACHE.ap.ssid,
       passphrase: ENDPOINT_CACHE.ap.wpa_passphrase,
 			interface: ENDPOINT_CACHE.ap.interface,
-			ipv4: ENDPOINT_CACHE.networking.interfaces[ENDPOINT_CACHE.ap.interface]?.IP_address,
+			ipv4: ENDPOINT_CACHE.networking.interfaces[ENDPOINT_CACHE.ap.interface]
+        ? ENDPOINT_CACHE.networking.interfaces[ENDPOINT_CACHE.ap.interface]?.IP_address
+        : null,
 			clients_count: ENDPOINT_CACHE.clients.active_clients_amount,
       hide_ssid: ENDPOINT_CACHE.ap.ignore_broadcast_ssid == '0' ? false : true
 		},
@@ -171,7 +196,7 @@ app.get("/api/dashboard", async (req, res) => {
 });
 
 app.get("/api/connection", async (req, res) => {
-  await refreshCache(['networking']);
+  await refreshCache(['networking', 'connection']);
 
   let connectionInterface = await getConnectionInterface();
   let connectionType = getConnectionType(connectionInterface);
@@ -180,7 +205,8 @@ app.get("/api/connection", async (req, res) => {
     connection_type: connectionType,
     interface: connectionInterface,
     ipv4: ENDPOINT_CACHE.networking.interfaces[connectionInterface]?.IP_address,
-    connected: [],
+    connected: ENDPOINT_CACHE.wifi_client.connected || null,
+    known: [],
     nearby: [],
   };
   

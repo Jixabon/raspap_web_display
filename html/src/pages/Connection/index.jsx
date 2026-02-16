@@ -16,14 +16,13 @@ export function Connection() {
         connection_type: 'wireless',
         interface: 'wlan0',
         ipv4: '192.168.1.25',
-        connected: [
-            {
-                ssid: 'HotelInternet',
-                channel: 4,
-                RSSI: '-33',
-                security: 'WPA'
-            }
-        ],
+        connected: {
+            ssid: 'HotelInternet',
+            channel: 4,
+            RSSI: '-33',
+            security: 'WPA'
+        },
+        known: [],
         nearby: [
             {
                 ssid: "McDonalds",
@@ -93,14 +92,20 @@ export function Connection() {
                     <span>{data.interface}</span>
                     <span className="font-bold whitespace-nowrap pr-6">WAN IP</span>
                     <span>{data.ipv4}</span>
+                    {data.connection_type === 'wireless' && (
+                        <>
+                            <span className="font-bold whitespace-nowrap pr-6">SSID</span>
+                            <span>{data.connected.ssid}</span>
+                        </>
+                    )}
                 </div>
 
                 {data.connection_type === 'wireless' && (
                     <>
-                        <h2 className="font-bold text-2xl mb-2">Connected</h2>
+                        <h2 className="font-bold text-2xl mb-2">Known</h2>
 
                         <div>
-                            {data.connected.map((network) => <WiFiCard network={network} />)}
+                            {data.known.map((network) => <WiFiCard network={network} />)}
                         </div>
 
                         <h2 className="font-bold text-2xl mb-2">Nearby</h2>
